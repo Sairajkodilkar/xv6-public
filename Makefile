@@ -77,7 +77,10 @@ LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
+# NOTE: The first command is failing resulting in the execution of the echo 
+# BUT: why is this even needed
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
+CFLAGS += -fdump-rtl-expand
 ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
 # FreeBSD ld wants ``elf_i386_fbsd''
 LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null | head -n 1)
@@ -95,11 +98,37 @@ xv6.img: bootblock kernel
 	dd if=bootblock of=xv6.img conv=notrunc
 	dd if=kernel of=xv6.img seek=1 conv=notrunc
 
+# Unneccessary for the qemu
 xv6memfs.img: bootblock kernelmemfs
 	dd if=/dev/zero of=xv6memfs.img count=10000
 	dd if=bootblock of=xv6memfs.img conv=notrunc
 	dd if=kernelmemfs of=xv6memfs.img seek=1 conv=notrunc
 
+#-O = -O1
+#
+# nostdinc: Do not search the standard system directories for header files.  Only the directories explicitly specified with -I, -iquote,
+# 			-isystem, and/or -idirafter options (and the directory of the current file, if appropriate) are searched.
+#
+#-N:  Set the text and data sections to be readable and writable.  Also, do not page-align the data segment, and disable linking against
+# 		shared libraries.
+#
+#-e: Use entry as the explicit symbol for beginning execution of your program, rather than the default entry point.  If there is no
+#	symbol named entry, the linker will try to parse entry as a number, and use that as the entry address (the number will be
+#	interpreted in base 10; you may use a leading 0x for base 16, or a leading 0 for base 8).
+#
+#-Ttext: Locate a section in the output file at the absolute address given by org.  You may use this option as many times as necessary to
+#		locate multiple sections in the command line.
+#
+#OBJDUMP: 
+# 	-S: Display source code intermixed with disassembly.
+# 	-t: Print the symbol table entries of the file. 
+#
+#OBJCOPY:
+# 	-S  Do not copy relocation and symbol information from the source file.
+# 	-O bfdname: Write the output file using the object format bfdname.
+# 	-j Copy only the indicated sections from the input file to the output file.
+#
+#
 bootblock: bootasm.S bootmain.c
 	$(CC) $(CFLAGS) -fno-pic -O -nostdinc -I. -c bootmain.c
 	$(CC) $(CFLAGS) -fno-pic -nostdinc -I. -c bootasm.S
@@ -140,9 +169,11 @@ kernelmemfs: $(MEMFSOBJS) entry.o entryother initcode kernel.ld fs.img
 tags: $(OBJS) entryother.S _init
 	etags *.S *.c
 
+#generate interrupt vector
 vectors.S: vectors.pl
 	./vectors.pl > vectors.S
 
+#user programs
 ULIB = ulib.o usys.o printf.o umalloc.o
 
 _%: %.o $(ULIB)

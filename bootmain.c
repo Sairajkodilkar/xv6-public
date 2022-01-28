@@ -25,7 +25,7 @@ bootmain(void)
   elf = (struct elfhdr*)0x10000;  // scratch space
 
   // Read 1st page off disk
-  readseg((uchar*)elf, 4096, 0);
+  readseg((uchar*)elf, 4096, 0); //why 4096 ?
 
   // Is this an ELF executable?
   if(elf->magic != ELF_MAGIC)

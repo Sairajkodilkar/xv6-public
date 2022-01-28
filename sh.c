@@ -269,6 +269,7 @@ gettoken(char **ps, char *es, char **q, char **eq)
   int ret;
 
   s = *ps;
+  //skip whitespace
   while(s < es && strchr(whitespace, *s))
     s++;
   if(q)
@@ -344,6 +345,9 @@ parsecmd(char *s)
 struct cmd*
 parseline(char **ps, char *es)
 {
+	/* ps: line start
+	 * es: line end
+	 */
   struct cmd *cmd;
 
   cmd = parsepipe(ps, es);

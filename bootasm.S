@@ -20,13 +20,23 @@ start:
 
   # Physical address line A20 is tied to zero so that the first PCs 
   # with 2 MB would run software that assumed 1 MB.  Undo that.
+# Enable 21 bit mode
+# 0x64 is command port
+# 0x60 is data port
+# bit 2 is input buffer status (input to the keyboard)
+
+#algo:
+#	check for the input buffer status
+#	when not set write 0xd1 to command port 
+#   This tells that we want to set the value of the output port 
+#   now writing 0xdf sets that output port value.
 seta20.1:
   inb     $0x64,%al               # Wait for not busy
-  testb   $0x2,%al
-  jnz     seta20.1
+  testb   $0x2,%al	
+  jnz     seta20.1				  # till we can write to the controller
 
   movb    $0xd1,%al               # 0xd1 -> port 0x64
-  outb    %al,$0x64
+  outb    %al,$0x64				  # set the output port of the keyboard controller
 
 seta20.2:
   inb     $0x64,%al               # Wait for not busy
@@ -34,12 +44,15 @@ seta20.2:
   jnz     seta20.2
 
   movb    $0xdf,%al               # 0xdf -> port 0x60
-  outb    %al,$0x60
+  outb    %al,$0x60				  # desired value of the output port
 
   # Switch from real to protected mode.  Use a bootstrap GDT that makes
   # virtual addresses map directly to physical addresses so that the
   # effective memory map doesn't change during the transition.
-  lgdt    gdtdesc
+
+#lgdt arg is pointer to gdt	structure which is size - 1, linear address of GDT
+
+  lgdt    gdtdesc    #load the mem address of the global
   movl    %cr0, %eax
   orl     $CR0_PE, %eax
   movl    %eax, %cr0
@@ -48,7 +61,7 @@ seta20.2:
   # Complete the transition to 32-bit protected mode by using a long jmp
   # to reload %cs and %eip.  The segment descriptors are set up with no
   # translation, so that the mapping is still the identity mapping.
-  ljmp    $(SEG_KCODE<<3), $start32
+  ljmp    $(SEG_KCODE<<3), $start32  # CS is nothing but a offset within global discriptor table
 
 .code32  # Tell assembler to generate 32-bit code now.
 start32:
