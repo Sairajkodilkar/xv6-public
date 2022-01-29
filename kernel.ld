@@ -48,7 +48,9 @@ SECTIONS
 		PROVIDE(__STABSTR_END__ = .);
 	}
 
-	/* Adjust the address for the data segment to the next page */
+	/* Adjust the address for the data segment to the next page 
+	 * This alignment is useful while reading the disk in readseg function
+	 */
 	. = ALIGN(0x1000);
 
 	/* Conventionally, Unix linkers provide pseudo-symbols

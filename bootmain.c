@@ -42,8 +42,14 @@ bootmain(void)
   for(; ph < eph; ph++){
     pa = (uchar*)ph->paddr; /* Pa address: physical address to load this program */
     readseg(pa, ph->filesz, ph->off);
-    if(ph->memsz > ph->filesz)
+    if(ph->memsz > ph->filesz) {
+		/* TO handle the condition when bss is loaded 
+		 * BSS has no file size as its just an number where as it must have
+		 * memory allocated to be able to use
+		 * This makes the elf file compact 
+		 */
       stosb(pa + ph->filesz, 0, ph->memsz - ph->filesz);
+	}
   }
 
   // Call the entry point from the ELF header.
@@ -88,6 +94,44 @@ readseg(uchar* pa, uint count, uint offset)
   epa = pa + count;
 
   // Round down to sector boundary.
+  /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   * Why to subtract pa as there could be other things 
+   * Also why this doesn't affect the physical address
+   *
+   * ********REASON****************
+   * At a given time we can only read an entire sector 
+   * hence if offset is not align to the sector size we will read extra bytes 
+   * starting at our physical address
+   * for that purpose the pa must be reduce to accomdate additional bytes read
+   * due to the reading of the entire sector
+   *
+   * When pa is not subtracted: 
+   *
+   * sector
+   * -----------
+   *    ^
+   *	|
+   *	off
+   * -----------
+   * ^
+   * |
+   * pa
+   *
+   *
+   * When pa is subtracted:
+   * -----------
+   *	^
+   *	|
+   *	off
+   * ----------
+   *	^
+   *	|
+   *	pa
+   * ^
+   * |
+   * pa - offset % 512
+   *
+   */
   pa -= offset % SECTSIZE;
 
   // Translate from bytes to sectors; kernel starts at sector 1.
@@ -97,5 +141,6 @@ readseg(uchar* pa, uint count, uint offset)
   // We'd write more to memory than asked, but it doesn't matter --
   // we load in increasing order.
   for(; pa < epa; pa += SECTSIZE, offset++)
+	  /* Offset is incremented by the 1 sector */
     readsect(pa, offset);
 }
