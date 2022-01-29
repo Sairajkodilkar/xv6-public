@@ -1,6 +1,13 @@
 //
 // assembler macros to create x86 segments
 //
+//Format:
+//	Limit low
+//	base low		#lower 2 bytes of the base |
+//	base middle		#middle 1 byte of the base |
+//	access									   |--> total 4 bytes = 32 bit base
+//	granularity								   |
+//	base high		#higher 1 byte of the base |
 
 #define SEG_NULLASM                                             \
         .word 0, 0;                                             \

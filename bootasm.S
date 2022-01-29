@@ -50,18 +50,22 @@ seta20.2:
   # virtual addresses map directly to physical addresses so that the
   # effective memory map doesn't change during the transition.
 
-#lgdt arg is pointer to gdt	structure which is size - 1, linear address of GDT
+#gdtr contains is size - 1, linear address of GDT
 
   lgdt    gdtdesc    #load the mem address of the global
   movl    %cr0, %eax
-  orl     $CR0_PE, %eax
+  orl     $CR0_PE, %eax #enable protection mode
   movl    %eax, %cr0
 
 //PAGEBREAK!
   # Complete the transition to 32-bit protected mode by using a long jmp
   # to reload %cs and %eip.  The segment descriptors are set up with no
   # translation, so that the mapping is still the identity mapping.
+
+  # shift by 3 since first 2 bits are reserved for determining LDT or GDT
+
   ljmp    $(SEG_KCODE<<3), $start32  # CS is nothing but a offset within global discriptor table
+									#which will be 8:start32 --> 0 + start32
 
 .code32  # Tell assembler to generate 32-bit code now.
 start32:
@@ -71,8 +75,8 @@ start32:
   movw    %ax, %es                # -> ES: Extra Segment
   movw    %ax, %ss                # -> SS: Stack Segment
   movw    $0, %ax                 # Zero segments not ready for use
-  movw    %ax, %fs                # -> FS
-  movw    %ax, %gs                # -> GS
+  movw    %ax, %fs                # -> FS #null GDT entry
+  movw    %ax, %gs                # -> GS #null GDT entry
 
   # Set up the stack pointer and call into C.
   movl    $start, %esp

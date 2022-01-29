@@ -14,6 +14,9 @@
 
 void readseg(uchar*, uint, uint);
 
+/* This is running in protected mode
+ * All addresses are 32 bit with CS:EIP format 
+ */
 void
 bootmain(void)
 {
@@ -22,10 +25,12 @@ bootmain(void)
   void (*entry)(void);
   uchar* pa;
 
+  // Figure out what is this deal with virtual memory!!!!
+  // Why this address is 0x10000 and not 0x10000*0* ?
   elf = (struct elfhdr*)0x10000;  // scratch space
 
   // Read 1st page off disk
-  readseg((uchar*)elf, 4096, 0); //why 4096 ?
+  readseg((uchar*)elf, 4096, 0); //why 4096 ? --> page size
 
   // Is this an ELF executable?
   if(elf->magic != ELF_MAGIC)
@@ -35,7 +40,7 @@ bootmain(void)
   ph = (struct proghdr*)((uchar*)elf + elf->phoff);
   eph = ph + elf->phnum;
   for(; ph < eph; ph++){
-    pa = (uchar*)ph->paddr;
+    pa = (uchar*)ph->paddr; /* Pa address: physical address to load this program */
     readseg(pa, ph->filesz, ph->off);
     if(ph->memsz > ph->filesz)
       stosb(pa + ph->filesz, 0, ph->memsz - ph->filesz);

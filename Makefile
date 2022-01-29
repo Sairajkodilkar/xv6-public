@@ -80,7 +80,6 @@ CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb 
 # NOTE: The first command is failing resulting in the execution of the echo 
 # BUT: why is this even needed
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
-CFLAGS += -fdump-rtl-expand
 ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
 # FreeBSD ld wants ``elf_i386_fbsd''
 LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null | head -n 1)
@@ -128,11 +127,17 @@ xv6memfs.img: bootblock kernelmemfs
 # 	-O bfdname: Write the output file using the object format bfdname.
 # 	-j Copy only the indicated sections from the input file to the output file.
 #
-#
+# NOTE: 0x7c00 is due to historical reason
+# 		The bootloader loads bootsector at this area 
+# 		But if we change this number the program will link by assuming
+# 		different physical addresses, hence the function call addrr and actual
+# 		physical address will differ.
 bootblock: bootasm.S bootmain.c
 	$(CC) $(CFLAGS) -fno-pic -O -nostdinc -I. -c bootmain.c
 	$(CC) $(CFLAGS) -fno-pic -nostdinc -I. -c bootasm.S
-	$(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o
+	$(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o # The boot loader starting address is 0x7c00-0x7d00
+																				   # The stack will grow down from 0x7c00 to 0x0000
+																				   # How does this info is preserved in bootblock binary ?
 	$(OBJDUMP) -S bootblock.o > bootblock.asm
 	$(OBJCOPY) -S -O binary -j .text bootblock.o bootblock
 	./sign.pl bootblock

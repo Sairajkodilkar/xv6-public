@@ -12,6 +12,7 @@
 #define CR4_PSE         0x00000010      // Page size extension
 
 // various segment selectors.
+// These are the entry numbers in GDT
 #define SEG_KCODE 1  // kernel code
 #define SEG_KDATA 2  // kernel data+stack
 #define SEG_UCODE 3  // user code
