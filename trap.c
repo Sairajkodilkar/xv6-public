@@ -1,5 +1,5 @@
 #include "types.h"
-#include "defs.h"
+#include "defs.h" 
 #include "param.h"
 #include "memlayout.h"
 #include "mmu.h"
@@ -33,9 +33,13 @@ idtinit(void)
 }
 
 //PAGEBREAK: 41
+/* how does the trap know that the argument is passed via stack and not the
+ * register 
+ */
 void
 trap(struct trapframe *tf)
 {
+	/* Whos handleing the top 32 system traps */
   if(tf->trapno == T_SYSCALL){
     if(myproc()->killed)
       exit();
@@ -46,6 +50,11 @@ trap(struct trapframe *tf)
     return;
   }
 
+  /* Sairaj:
+   *	Which stack the hardware interrupt uses
+   *	It should not be any processes's stack rather it should be kernel stack
+   *	But verify it 
+   */
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){
@@ -87,6 +96,9 @@ trap(struct trapframe *tf)
       panic("trap");
     }
     // In user space, assume process misbehaved.
+	/* Sairaj:
+	 * this means that any 0 to 32 will cause the killing of the process 
+	 */
     cprintf("pid %d %s: trap %d err %d on cpu %d "
             "eip 0x%x addr 0x%x--kill proc\n",
             myproc()->pid, myproc()->name, tf->trapno,
@@ -104,9 +116,18 @@ trap(struct trapframe *tf)
   // If interrupts were on while locks held, would need to check nlock.
   if(myproc() && myproc()->state == RUNNING &&
      tf->trapno == T_IRQ0+IRQ_TIMER)
+	  /* Sairaj:
+	   *	Why yeild is not saving the context?
+	   *	Then Who saves the context 
+	   */
     yield();
 
   // Check if the process has been killed since we yielded
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
     exit();
+
+  /* Sairaj:
+   *	The return from here goes as follows:
+   *	trap->alltraps->system call user interface->user code
+   */
 }

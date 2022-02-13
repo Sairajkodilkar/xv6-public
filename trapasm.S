@@ -11,12 +11,16 @@ alltraps:
   pushal
   
   # Set up data segments.
+  /* Sairaj:
+   * This loads the data segment for the kernel 
+   * No need to load the CS as it is already loaded by the hardware
+   */
   movw $(SEG_KDATA<<3), %ax
   movw %ax, %ds
   movw %ax, %es
 
   # Call trap(tf), where tf=%esp
-  pushl %esp
+  pushl %esp //argument to the trap which is current trap frame
   call trap
   addl $4, %esp
 
@@ -29,4 +33,4 @@ trapret:
   popl %es
   popl %ds
   addl $0x8, %esp  # trapno and errcode
-  iret
+  iret # Sairaj: directly go to the caller 

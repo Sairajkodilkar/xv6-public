@@ -52,15 +52,29 @@ mpsearch(void)
   uint p;
   struct mp *mp;
 
-  bda = (uchar *) P2V(0x400);
+  bda = (uchar *) P2V(0x400); /* bios data area stores the 2 byte segment address of the EBDA */
+  /* The EBDA base address is right shifted by the 4 
+   * Now or the lower address 0x0E with the higher address 0x0F shifted by the
+   * 8 bit position and shift entire address right by 4 bit to get the eba
+   * address
+   *
+   * If this is 0 then ebda address is invalid
+   * NOTE: this gives us the ebda physical address
+   */
   if((p = ((bda[0x0F]<<8)| bda[0x0E]) << 4)){
     if((mp = mpsearch1(p, 1024)))
       return mp;
   } else {
+	  /* Get the pointer to the end of the memory 
+	   * subtract 1024 to get the pointer to the last 1024 area
+	   */
     p = ((bda[0x14]<<8)|bda[0x13])*1024;
     if((mp = mpsearch1(p-1024, 1024)))
       return mp;
   }
+  /* why this has length 64K 
+   * because this is what specification says
+   */
   return mpsearch1(0xF0000, 0x10000);
 }
 
@@ -83,6 +97,7 @@ mpconfig(struct mp **pmp)
   if(conf->version != 1 && conf->version != 4)
     return 0;
   if(sum((uchar*)conf, conf->length) != 0)
+	  /* return 0 when checksum does not match */
     return 0;
   *pmp = mp;
   return conf;
@@ -102,7 +117,11 @@ mpinit(void)
     panic("Expect to run on an SMP");
   ismp = 1;
   lapic = (uint*)conf->lapicaddr;
+  /* p is pointing to the end of conf and e is pointntin to the end of entire
+   * base table
+   */
   for(p=(uchar*)(conf+1), e=(uchar*)conf+conf->length; p<e; ){
+	  /* switch to examine 1 byte the type field*/
     switch(*p){
     case MPPROC:
       proc = (struct mpproc*)p;
@@ -114,6 +133,7 @@ mpinit(void)
       continue;
     case MPIOAPIC:
       ioapic = (struct mpioapic*)p;
+	  /* globa assignment */
       ioapicid = ioapic->apicno;
       p += sizeof(struct mpioapic);
       continue;
@@ -133,7 +153,14 @@ mpinit(void)
   if(mp->imcrp){
     // Bochs doesn't support IMCR, so this doesn't run on Bochs.
     // But it would on real hardware.
-    outb(0x22, 0x70);   // Select IMCR
-    outb(0x23, inb(0x23) | 1);  // Mask external interrupts.
+	  /* The IMCR is supported by two read/writable or write-only I/O ports, 22h and 23h, which receive
+		 address and data respectively. To access the IMCR, write a value of 70h to I/O port 22h, which
+		 selects the IMCR. Then write the data to I/O port 23h. The power-on default value is zero, which
+		 connects the NMI and 8259 INTR lines directly to the BSP. Writing a value of 01h forces the
+		 NMI and 8259 INTR signals to pass through the APIC. 
+		*/
+	  /* TURN ON the apic mode */
+	  outb(0x22, 0x70);   // Select IMCR
+	  outb(0x23, inb(0x23) | 1);  // Mask external interrupts.
   }
 }

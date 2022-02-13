@@ -1,13 +1,20 @@
 #include "types.h"
 #include "x86.h"
 
+/* kernel uses this string memset not the one in ulib.c 
+ * memset stores byte c at the destination
+ * WHY INT IS USED ?
+ */
 void*
 memset(void *dst, int c, uint n)
 {
   if ((int)dst%4 == 0 && n%4 == 0){
     c &= 0xFF;
+	/* address data count */
+	/* only the last byte is duplicated */
     stosl(dst, (c<<24)|(c<<16)|(c<<8)|c, n/4);
   } else
+	  /* store expects the data bytewise */
     stosb(dst, c, n);
   return dst;
 }

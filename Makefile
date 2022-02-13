@@ -118,6 +118,9 @@ xv6memfs.img: bootblock kernelmemfs
 #-Ttext: Locate a section in the output file at the absolute address given by org.  You may use this option as many times as necessary to
 #		locate multiple sections in the command line.
 #
+#LD:
+#   -b format: switch the linker input format to given format
+#
 #OBJDUMP: 
 # 	-S: Display source code intermixed with disassembly.
 # 	-t: Print the symbol table entries of the file. 
@@ -154,6 +157,8 @@ initcode: initcode.S
 	$(OBJCOPY) -S -O binary initcode.out initcode
 	$(OBJDUMP) -S initcode.o > initcode.asm
 
+# kernel is concat of 
+# 		entry + main + initcode + entryother
 kernel: $(OBJS) entry.o entryother initcode kernel.ld
 	$(LD) $(LDFLAGS) -T kernel.ld -o kernel entry.o $(OBJS) -b binary initcode entryother
 	$(OBJDUMP) -S kernel > kernel.asm
@@ -181,6 +186,7 @@ vectors.S: vectors.pl
 #user programs
 ULIB = ulib.o usys.o printf.o umalloc.o
 
+# I think this is static compilation
 _%: %.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $@ $^
 	$(OBJDUMP) -S $@ > $*.asm
@@ -255,6 +261,8 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 ifndef CPUS
 CPUS := 2
 endif
+
+#512 MB Ram 
 QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 512 $(QEMUEXTRA)
 
 qemu: fs.img xv6.img

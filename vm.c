@@ -111,22 +111,35 @@ static struct kmap {
  { (void*)KERNBASE, 0,             EXTMEM,    PTE_W}, // I/O space
  { (void*)KERNLINK, V2P(KERNLINK), V2P(data), 0},     // kern text+rodata
  { (void*)data,     V2P(data),     PHYSTOP,   PTE_W}, // kern data+memory
+/* Here the end is zero because of the unsigned nature of the function using
+ * this the -0xFE000000 becomes 0xFFFFFFFF - 0xFE000000 + 1 = remaining space
+ * at the top/end of the memory
+ */
  { (void*)DEVSPACE, DEVSPACE,      0,         PTE_W}, // more devices
 };
 
 // Set up kernel part of a page table.
+/* This create the nested pagedirectory with 10-10-12 scheme
+ * Here each page table is 4K because each entry has 4 bytes and there are 1K
+ * such entries
+ */
 pde_t*
 setupkvm(void)
 {
   pde_t *pgdir;
   struct kmap *k;
 
+  /* allocate 4k page */
   if((pgdir = (pde_t*)kalloc()) == 0)
     return 0;
+  /* zero the 4k page */
   memset(pgdir, 0, PGSIZE);
   if (P2V(PHYSTOP) > (void*)DEVSPACE)
     panic("PHYSTOP too high");
   for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
+	  /* Fill up each directory entry corrosponding to top 10 bits of the
+	   * virtual address
+	   */
     if(mappages(pgdir, k->virt, k->phys_end - k->phys_start,
                 (uint)k->phys_start, k->perm) < 0) {
       freevm(pgdir);
@@ -141,6 +154,7 @@ void
 kvmalloc(void)
 {
   kpgdir = setupkvm();
+  /* why not change cr4 for 4K page size */
   switchkvm();
 }
 
@@ -172,7 +186,12 @@ switchuvm(struct proc *p)
   // setting IOPL=0 in eflags *and* iomb beyond the tss segment limit
   // forbids I/O instructions (e.g., inb and outb) from user space
   mycpu()->ts.iomb = (ushort) 0xFFFF;
-  ltr(SEG_TSS << 3);
+  /* Sairaj:
+   *	This tells that this is the TSS entry for the given process
+   *	the segments inside the TSS are used for setting the values of the 
+   *	SS and ESP  while changing the PL during the interrupt
+   */
+  ltr(SEG_TSS << 3); // Sairaj: 5th entry in the LGDTR is the TSS
   lcr3(V2P(p->pgdir));  // switch to process's address space
   popcli();
 }
@@ -186,9 +205,21 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 
   if(sz >= PGSIZE)
     panic("inituvm: more than a page");
+  /* get the free page */
   mem = kalloc();
   memset(mem, 0, PGSIZE);
+  /* Map the virtual address 
+   * 0 to pagesize to the physical address of the mem
+   * This replaces a setupkvm entry which maps the 0 to EXTMEM physical
+   * address to the KERNBASE virtual address
+   *
+   */
   mappages(pgdir, 0, PGSIZE, V2P(mem), PTE_W|PTE_U);
+  /* Why this init is just the data
+   * TODO: Investigate
+   *		initcode exists in a binary format at the end of the kernel code,
+   *		so where is this init comming from
+   */
   memmove(mem, init, sz);
 }
 

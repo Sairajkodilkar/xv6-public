@@ -30,7 +30,7 @@ struct proghdr {
   uint filesz; /* size of segment in bytes in file image */
   uint memsz; /*  size of seg in bytes in memory */
   uint flags;
-  uint align; /* when greater than 1: vaddr = off % align
+  uint align; /* when greater than 1: vaddr = off % align */
 };
 
 // Values for Proghdr type

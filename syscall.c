@@ -14,6 +14,7 @@
 // to a saved program counter, and then the first argument.
 
 // Fetch the int at addr from the current process.
+/* Fetch the 4 bytes from the address given and store it into the ip*/
 int
 fetchint(uint addr, int *ip)
 {
@@ -28,6 +29,11 @@ fetchint(uint addr, int *ip)
 // Fetch the nul-terminated string at addr from the current process.
 // Doesn't actually copy the string - just sets *pp to point at it.
 // Returns length of string, not including nul.
+
+/* Sairaj:
+ *		point the *pp to the addr
+ *		This just return the size of the string
+ */
 int
 fetchstr(uint addr, char **pp)
 {
@@ -49,12 +55,20 @@ fetchstr(uint addr, char **pp)
 int
 argint(int n, int *ip)
 {
+	/* stores the 4 byte at the memory address specified into the pointers
+	 * passed
+	 * esp + 4 --> skips the return address of eip
+	 */
   return fetchint((myproc()->tf->esp) + 4 + 4*n, ip);
 }
 
 // Fetch the nth word-sized system call argument as a pointer
 // to a block of memory of size bytes.  Check that the pointer
 // lies within the process address space.
+/* Sairaj:
+ *	The argptr get the 4 bytes from the memory region above the esp + 4
+ *	These 4 bytes are treated as the pointer to the memory region
+ */
 int
 argptr(int n, char **pp, int size)
 {
@@ -73,10 +87,21 @@ argptr(int n, char **pp, int size)
 // Check that the pointer is valid and the string is nul-terminated.
 // (There is no shared writable memory, so the string can't change
 // between this check and being used by the kernel.)
+/* Sairaj:
+ *		See sys_mkdir for simple usage 
+ */
 int
 argstr(int n, char **pp)
 {
   int addr;
+  /*Sairaj:
+   *	Get the address of the nth 4 byte integer from the eip on the stack and
+   *	store it in the addr register
+   *
+   *	Now point pp to the that address
+   *
+   *	Argint inturn checks the esp
+   */
   if(argint(n, &addr) < 0)
     return -1;
   return fetchstr(addr, pp);
@@ -134,12 +159,19 @@ syscall(void)
   int num;
   struct proc *curproc = myproc();
 
+  /* Sairaj:
+   * Why use eax and not the trapno
+   *  this must mean that the system call number is passed via eax of the
+   *  user program
+   *  Indeed the file usys.S stores the syscall number in the eax
+   * 
+   */
   num = curproc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    curproc->tf->eax = syscalls[num]();
+	  curproc->tf->eax = syscalls[num]();
   } else {
-    cprintf("%d %s: unknown sys call %d\n",
-            curproc->pid, curproc->name, num);
-    curproc->tf->eax = -1;
+	  cprintf("%d %s: unknown sys call %d\n",
+			  curproc->pid, curproc->name, num);
+	  curproc->tf->eax = -1;
   }
 }

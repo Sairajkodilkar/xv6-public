@@ -70,6 +70,17 @@ myproc(void) {
 // If found, change state to EMBRYO and initialize
 // state required to run in the kernel.
 // Otherwise return 0.
+/* allocates the process:
+ *		1) allocate a process table entry
+ *		2) Mark state as embryou
+ *		3) allocate PID
+ *		4) Allocate kernel stack
+ *		5) allocate space for:
+ *				trapeframe
+ *				trapreturn
+ *				context
+ *			on the kernel stack
+ */
 static struct proc*
 allocproc(void)
 {
@@ -121,11 +132,15 @@ void
 userinit(void)
 {
   struct proc *p;
+  /* Who is defining them ? 
+   * TODO FIND 
+   */
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
   p = allocproc();
   
   initproc = p;
+  /* setup the initial page table to point to the kernel space */
   if((p->pgdir = setupkvm()) == 0)
     panic("userinit: out of memory?");
   inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
@@ -140,6 +155,7 @@ userinit(void)
   p->tf->eip = 0;  // beginning of initcode.S
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
+  /* assign inode of the root to cwd */
   p->cwd = namei("/");
 
   // this assignment to p->state lets other cores
@@ -328,6 +344,19 @@ scheduler(void)
   
   for(;;){
     // Enable interrupts on this processor.
+	/* Sairaj:
+	 *	Why set interrupt in infinite loop
+	 *	Is someone disabling it?
+	 *	TODO: investigate
+	 *		This is essential since the scheduler start running only when the
+	 *		program yields due to the timer interrupt, while serving this
+	 *		interrupt the x86 disables the interrupts hence same setting gets
+	 *		carried out, hence STI is called to set the IF again.
+	 *
+	 *	Further question:
+	 *		Why Scheduler is allowed to be interrupted?
+	 *		What if there is timer interrupt in the mid of scheduler
+	 */
     sti();
 
     // Loop over process table looking for process to run.
@@ -340,10 +369,25 @@ scheduler(void)
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
       c->proc = p;
+
+	  /* Sairaj:
+	   *	change the mm setting for the process 
+	   */
       switchuvm(p);
       p->state = RUNNING;
 
+	  /* Sairaj:
+	   * this function only returns when the process has yield as a result of
+	   * the timer interrupt
+	   * 
+	   * At the start all registers except the eip in the context are zero 
+	   * The eip is pointing to the entry to the process 
+	   * MY GUESS: Trap must save the context 
+	   */
       swtch(&(c->scheduler), p->context);
+	  /* Sairaj:
+	   *	since the process has yield restore the mm setting for the kernel 
+	   */
       switchkvm();
 
       // Process is done running for now.
@@ -377,6 +421,14 @@ sched(void)
   if(readeflags()&FL_IF)
     panic("sched interruptible");
   intena = mycpu()->intena;
+  /* here the mycpu()->scheduler is pointing to the esp of the scheduler
+   * function 
+   * NOW this function pushes all the context register on the stack and stores
+   * the context on the stack and make the p->context point to that memory
+   * address
+   * 
+   * This switch returns in the scheduler() which is running infinitely.
+   */
   swtch(&p->context, mycpu()->scheduler);
   mycpu()->intena = intena;
 }

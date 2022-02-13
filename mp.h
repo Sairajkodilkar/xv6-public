@@ -1,14 +1,21 @@
 // See MultiProcessor Specification Version 1.[14]
+// At one of the three locations mp is located
+// 1) in the first KB of the EBDA;
+// 2) in the last KB of system base memory;
+// 3) in the BIOS ROM between 0xE0000 and 0xFFFFF.
+//
+// mp -> mpconf 
+// 
 
 struct mp {             // floating pointer
   uchar signature[4];           // "_MP_"
   void *physaddr;               // phys addr of MP config table
-  uchar length;                 // 1
-  uchar specrev;                // [14]
+  uchar length;                 // 1 length of the floating pointer structure in multiples of 16 bytes
+  uchar specrev;                // [14] version of the MP specification
   uchar checksum;               // all bytes must add up to 0
-  uchar type;                   // MP system config type
-  uchar imcrp;
-  uchar reserved[3];
+  uchar type;                   // MP system config type 0-> config table is present
+  uchar imcrp;					// pic mode or virtual wire mode
+  uchar reserved[3];			// for future use
 };
 
 struct mpconf {         // configuration table header
@@ -30,7 +37,8 @@ struct mpproc {         // processor table entry
   uchar type;                   // entry type (0)
   uchar apicid;                 // local APIC id
   uchar version;                // local APIC verison
-  uchar flags;                  // CPU flags
+  uchar flags;                  // CPU flags bit 0: 0=unusable processor
+								//			 bit 1: 1=bootstrap processor
     #define MPBOOT 0x02           // This proc is the bootstrap processor.
   uchar signature[4];           // CPU signature
   uint feature;                 // feature flags from CPUID instruction

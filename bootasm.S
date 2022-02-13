@@ -61,11 +61,18 @@ seta20.2:
   # Complete the transition to 32-bit protected mode by using a long jmp
   # to reload %cs and %eip.  The segment descriptors are set up with no
   # translation, so that the mapping is still the identity mapping.
+  # How does ljmp is executed, what is there inside the cs  
 
   # shift by 3 since first 2 bits are reserved for determining LDT or GDT
+  # also the GDT is 8 byte align
 
+/* Sairaj:
+	* Segment selector format is 15-3 = selector, 2 = Table indicator, 1-0=RPL
+	* TODO: investigate why code goes into infinite loop when Privilage level is
+		 changed
+	*/
   ljmp    $(SEG_KCODE<<3), $start32  # CS is nothing but a offset within global discriptor table
-									#which will be 8:start32 --> 0 + start32
+									#which will be --> 0 + start32
 
 .code32  # Tell assembler to generate 32-bit code now.
 start32:
@@ -96,6 +103,7 @@ spin:
 .p2align 2                                # force 4 byte alignment
 gdt:
   SEG_NULLASM                             # null seg
+  /*Sairaj: here code segment is non conforming */
   SEG_ASM(STA_X|STA_R, 0x0, 0xffffffff)   # code seg
   SEG_ASM(STA_W, 0x0, 0xffffffff)         # data seg
 

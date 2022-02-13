@@ -1,0 +1,17 @@
+0x00000000 0x000003ff  real mode IVT (1 KiB)
+0x00000400 0x000004ff  BDA(BIOS data area) (256 bytes)
+0x00000500 0x00007bff  conventional memory (almost 30KiB)	//bootmain.c uses this memory are as stack
+0x00007C00 0x00007dff  Your OS BootSector (512 B)              -->  640K (low memory)
+0x00007E00 0x0007ffff  convectional memory (480 KiB)
+0x00080000 0x0009ffff  EBDA (128 KiB)
+
+0x000a0000 0x000bffff  video display memory (128 K)
+0x000c0000 0x000cffff  video BIOS (32 K)					   --> 384 K (system reserved "Upper memory")
+0x000c8000 0x000effff  BIOS expansion (160 K)					
+0x000f0000 0x000fffff  motherboard BIOS (64 K)
+
+
+BDA
+0x40E  Two bytes   EBDA base address
+0x413  Two bytes   Memory size in KiBs 
+

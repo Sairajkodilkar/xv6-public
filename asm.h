@@ -6,7 +6,7 @@
 //	base low		#lower 2 bytes of the base |
 //	base middle		#middle 1 byte of the base |
 //	access									   |--> total 4 bytes = 32 bit base
-//	granularity #flag and 4 bit limit		   |
+//	granularity #flag and higher 4 bit limit		   |
 //	base high		#higher 1 byte of the base |
 //
 //80286 MANUAL:
@@ -18,7 +18,7 @@
 //	actual limit may range from 0FFFH (212 - 1 or 4 kilobytes) to 0FFFFFFFFH 
 //	(232 - 1 or 4 gigabytes).
 //
-//	(USE the unit of 4K instead of 1 byte)
+//	(USE the unit of 4K instead of 1 byte )
 //	
 
 #define SEG_NULLASM                                             \

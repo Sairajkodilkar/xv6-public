@@ -6,7 +6,7 @@
 
 // Control Register flags
 #define CR0_PE          0x00000001      // Protection Enable
-#define CR0_WP          0x00010000      // Write Protect
+#define CR0_WP          0x00010000      // Write Protect(cpu cant write to read only pages in ring 0)
 #define CR0_PG          0x80000000      // Paging
 
 #define CR4_PSE         0x00000010      // Page size extension
@@ -88,7 +88,11 @@ struct segdesc {
 #define PTXSHIFT        12      // offset of PTX in a linear address
 #define PDXSHIFT        22      // offset of PDX in a linear address
 
-#define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))
+/* This technique only works for the multiple of 2
+ * In this we mask the lower bits by simply using complement 
+ */
+#define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1)) 
+/* simply mask the lower bits */
 #define PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1))
 
 // Page table/directory entry flags.
@@ -151,7 +155,7 @@ struct gatedesc {
   uint cs : 16;         // code segment selector
   uint args : 5;        // # args, 0 for interrupt/trap gates
   uint rsv1 : 3;        // reserved(should be zero I guess)
-  uint type : 4;        // type(STS_{IG32,TG32})
+  uint type : 4;        // type(STS_{IG32,TG32}) trap gate: 01111 and interrupt gate: 01110 
   uint s : 1;           // must be 0 (system)
   uint dpl : 2;         // descriptor(meaning new) privilege level
   uint p : 1;           // Present

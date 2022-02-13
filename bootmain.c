@@ -27,10 +27,22 @@ bootmain(void)
 
   // Figure out what is this deal with virtual memory!!!!
   // Why this address is 0x10000 and not 0x10000*0* ?
+  /* Sairaj:
+   *	This is just a space allocated by the bios specs for the use of the 
+   *	bootloader, We can load ELF address here because we dont need it to be
+   *	part of kernel
+   *	Actual kernel should load at 0x100000 which is done is for loop
+   *
+   *	You can even change this address 
+   */
   elf = (struct elfhdr*)0x10000;  // scratch space
 
   // Read 1st page off disk
-  readseg((uchar*)elf, 4096, 0); //why 4096 ? --> page size
+  /* The linker aligns code and data segment to 1<<12
+   * hence the necessary amount of the zeros are padded 
+   */
+  readseg((uchar*)elf, 4096, 0); //why 4096 ? --> page size alignment
+								 //we can even read 512 bytes 
 
   // Is this an ELF executable?
   if(elf->magic != ELF_MAGIC)
@@ -54,7 +66,9 @@ bootmain(void)
 
   // Call the entry point from the ELF header.
   // Does not return!
+  /* ELF header has physical address of the entry */
   entry = (void(*)(void))(elf->entry);
+  /* This call is physical address since we haven't enable the paging */
   entry();
 }
 
@@ -70,18 +84,30 @@ waitdisk(void)
 void
 readsect(void *dst, uint offset)
 {
+	/*
+	 *  Send the sectorcount to port 0x1F2
+		Send the low 8 bits of the LBA to port 0x1F3
+		Send the next 8 bits of the LBA to port 0x1F4
+		Send the next 8 bits of the LBA to port 0x1F5
+		Send the "READ SECTORS" command (0x20) to port 0x1F7
+		Wait for an IRQ or poll. 
+		get the 4 bytes 128 times.
+	*/
+
   // Issue command.
   waitdisk();
   outb(0x1F2, 1);   // count = 1
   outb(0x1F3, offset);
-  outb(0x1F4, offset >> 8);
+  outb(0x1F4, offset >> 8); 
   outb(0x1F5, offset >> 16);
   outb(0x1F6, (offset >> 24) | 0xE0);
   outb(0x1F7, 0x20);  // cmd 0x20 - read sectors
 
   // Read data.
   waitdisk();
-  insl(0x1F0, dst, SECTSIZE/4);
+  insl(0x1F0, dst, SECTSIZE/4); //l = double word (32 bit) 
+								//cnt = 128
+								//Read 4 byte 128 times = 512 bytes
 }
 
 // Read 'count' bytes at 'offset' from kernel into physical address 'pa'.

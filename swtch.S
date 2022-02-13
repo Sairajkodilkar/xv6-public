@@ -8,8 +8,14 @@
 
 .globl swtch
 swtch:
-  movl 4(%esp), %eax
-  movl 8(%esp), %edx
+/* Sairaj:
+ * The calling convention saves the return address after the parameter
+ * i.e. save CS and perform jump
+ * Now we are sure that these are passed via stack because in GCC this is the
+ * default behavior for the 32 bit machine
+ */
+  movl 4(%esp), %eax // &(c->scheduler)
+  movl 8(%esp), %edx // context
 
   # Save old callee-saved registers
   pushl %ebp
@@ -18,6 +24,16 @@ swtch:
   pushl %edi
 
   # Switch stacks
+  /* Sairaj:
+   *
+   * Scheduler:
+   *	This stores the current stacks as the schedulers stack
+   * and get the loads the process' esp inside
+   *
+   * Sced:
+   *	The function sched does exactly the opposite and restores the
+   *	schedulers stack
+   */
   movl %esp, (%eax)
   movl %edx, %esp
 
@@ -26,4 +42,9 @@ swtch:
   popl %esi
   popl %ebx
   popl %ebp
+  /* Since scheduler schedules the process this return will go the IP stored on
+   * stack of the process 
+   * This will go back to the yield() then trap will return and then process
+   * again goes to the user space 
+   */
   ret

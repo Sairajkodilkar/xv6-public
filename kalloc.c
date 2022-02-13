@@ -61,10 +61,14 @@ kfree(char *v)
 {
   struct run *r;
 
+  /*Check if the address is greater than the end address of the kernel
+   * As we dont want to free the kernel memory space 
+   */
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
     panic("kfree");
 
   // Fill with junk to catch dangling refs.
+  /* This is from string.c */
   memset(v, 1, PGSIZE);
 
   if(kmem.use_lock)

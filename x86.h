@@ -1,4 +1,38 @@
 // Routines to let C code use special x86 instructions.
+/* asm asm-qualifiers ( AssemblerTemplate 
+                 : OutputOperands 
+                 [ : InputOperands
+                 [ : Clobbers ] ])
+	
+	output constraint
+		g
+		    global (i.e. can be stored anywhere)
+		m
+		    in memory
+		I
+		    a constant
+		a
+		    use eax
+		b
+		    use ebx
+		c
+		    use ecx
+		d
+		    use edx
+		S
+		    use esi
+		D
+		    use edi
+		r
+		    use one of eax, ebx, ecx or edx
+		q
+		    use one of eax, ebx, ecx, edx, esi or edi
+	
+	clobber:
+		cc: assembler code modifies the flag register.
+		memory:	assembler code may perform memory read or write.
+	
+*/
 
 static inline uchar
 inb(ushort port)
@@ -12,6 +46,10 @@ inb(ushort port)
 static inline void
 insl(int port, void *addr, int cnt)
 {
+	/* insl:
+	 *		Input byte from I/O port specified in DX into memory location
+	 *		specified in ES:EDI
+	 */
   asm volatile("cld; rep insl" :
                "=D" (addr), "=c" (cnt) :
                "d" (port), "0" (addr), "1" (cnt) :
