@@ -154,7 +154,6 @@ void
 kvmalloc(void)
 {
   kpgdir = setupkvm();
-  /* why not change cr4 for 4K page size */
   switchkvm();
 }
 
@@ -260,6 +259,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
   if(newsz < oldsz)
     return oldsz;
 
+  /* TODO: understand why this is round up */
   a = PGROUNDUP(oldsz);
   for(; a < newsz; a += PGSIZE){
     mem = kalloc();
@@ -269,6 +269,9 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       return 0;
     }
     memset(mem, 0, PGSIZE);
+	/* Map the given physical address from the free list to the given virutal
+	 * address 
+	 */
     if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
       cprintf("allocuvm out of memory (2)\n");
       deallocuvm(pgdir, newsz, oldsz);
@@ -292,6 +295,7 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
   if(newsz >= oldsz)
     return oldsz;
 
+  /* TODO: investigate why old size */
   a = PGROUNDUP(newsz);
   for(; a  < oldsz; a += PGSIZE){
     pte = walkpgdir(pgdir, (char*)a, 0);

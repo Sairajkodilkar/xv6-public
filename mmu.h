@@ -102,7 +102,12 @@ struct segdesc {
 #define PTE_PS          0x080   // Page Size
 
 // Address in page table or page directory entry
+/* extract the upper 20 bit of the page table entry 
+ */
 #define PTE_ADDR(pte)   ((uint)(pte) & ~0xFFF)
+/* Extract the lower 12 bits which are reserved for the flag for the given page
+ * table entry
+ */
 #define PTE_FLAGS(pte)  ((uint)(pte) &  0xFFF)
 
 #ifndef __ASSEMBLER__

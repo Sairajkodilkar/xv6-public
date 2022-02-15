@@ -121,6 +121,7 @@ found:
   sp -= sizeof *p->context;
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
+  /*Start executing at the forkret function */
   p->context->eip = (uint)forkret;
 
   return p;
