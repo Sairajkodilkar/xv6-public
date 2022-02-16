@@ -12,8 +12,9 @@ alltraps:
   
   # Set up data segments.
   /* Sairaj:
+   * Until this point we are using the same data segment as that of the program 
    * This loads the data segment for the kernel 
-   * No need to load the CS as it is already loaded by the hardware
+   * No need to load the CS:EIP as it is already loaded by the hardware
    */
   movw $(SEG_KDATA<<3), %ax
   movw %ax, %ds

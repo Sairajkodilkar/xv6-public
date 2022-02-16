@@ -18,6 +18,8 @@
 # of entrypgdir in start-12.
 #
 # This code combines elements of bootasm.S and entry.S.
+/* Sairaj:
+ *	This code is ran on remaining processors, now since the 
 
 .code16           
 .globl start

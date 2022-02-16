@@ -40,8 +40,16 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 
   pde = &pgdir[PDX(va)];
   if(*pde & PTE_P){
+	  /* Sairaj:
+	   * if the page directory entry has table allocated to it and it is
+	   * present then get the page table address 
+	   */
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
   } else {
+	/* Sairaj:
+	 * if page table is not allocated and caller asks to allocate it 
+	 * then allocat the page table using kalloc
+	 */
     if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
       return 0;
     // Make sure all those PTE_P bits are zero.
@@ -49,8 +57,16 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
     // The permissions here are overly generous, but they can
     // be further restricted by the permissions in the page table
     // entries, if necessary.
+	/* Sairaj:
+	 * Store the address of the allocated page table inside the page directory
+	 * with the present, writeable and user bits set
+	 */
     *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
   }
+  /* Sairaj:
+   *	Get the address inside the page table where you need to store frame
+   *	address
+   */
   return &pgtab[PTX(va)];
 }
 
@@ -119,9 +135,17 @@ static struct kmap {
 };
 
 // Set up kernel part of a page table.
-/* This create the nested pagedirectory with 10-10-12 scheme
+/* Sairaj:
+ * This create the nested pagedirectory with 10-10-12 scheme
  * Here each page table is 4K because each entry has 4 bytes and there are 1K
  * such entries
+ *
+   *	setupkvm does following:
+   *	allocate the page directory
+   *	maps the kernel address space to that page directory
+   *	and return the pagedirectory address
+   *	TODO: investiage if the page dir address returned is virtual or
+   *	physical
  */
 pde_t*
 setupkvm(void)
@@ -129,13 +153,18 @@ setupkvm(void)
   pde_t *pgdir;
   struct kmap *k;
 
-  /* allocate 4k page */
+  /* Sairaj: allocate 4k page */
   if((pgdir = (pde_t*)kalloc()) == 0)
     return 0;
-  /* zero the 4k page */
+  /* Sairaj: zero the 4k page */
   memset(pgdir, 0, PGSIZE);
   if (P2V(PHYSTOP) > (void*)DEVSPACE)
     panic("PHYSTOP too high");
+  /*Sairaj:
+   *	Map the kernel pages to the pagedirectory of the user process
+   *	This is essential as we need to handle the traps which are in kernel
+   *	space
+   */
   for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
 	  /* Fill up each directory entry corrosponding to top 10 bits of the
 	   * virtual address
@@ -166,6 +195,8 @@ switchkvm(void)
 }
 
 // Switch TSS and h/w page table to correspond to process p.
+/* TODO: read about the tasks in the x86
+ */
 void
 switchuvm(struct proc *p)
 {
@@ -197,6 +228,14 @@ switchuvm(struct proc *p)
 
 // Load the initcode into address 0 of pgdir.
 // sz must be less than a page.
+/* Sairaj:
+ *	This loads the init inside a page of the memory
+ *	steps:
+ *		1) get a frame
+ *		2) set all zeros to the frame
+ *		3) map the frame to a virtual address of the init
+ *		4) move all the initcode of size sz into the memory page
+ */
 void
 inituvm(pde_t *pgdir, char *init, uint sz)
 {
@@ -218,6 +257,8 @@ inituvm(pde_t *pgdir, char *init, uint sz)
    * TODO: Investigate
    *		initcode exists in a binary format at the end of the kernel code,
    *		so where is this init comming from
+   *		Ans this is passed by the userinit
+   *
    */
   memmove(mem, init, sz);
 }
@@ -347,6 +388,21 @@ clearpteu(pde_t *pgdir, char *uva)
 
 // Given a parent process's page table, create a copy
 // of it for a child.
+/* Sairaj:
+ *	steps inside the copyuvm
+ *	1) setup the basic page directory for the kernel
+ *	2) for each virtual address get the actual frame address from the page
+ *	table
+ *	3) allocate the new frame
+ *	4) copy all the contents of the page from the source frame to newly
+ *	allocated frame
+ *	5) Go to step 2 until the size of the program is traverse
+ *
+ *	TODO: 
+ *		Investigate if for the programs view virtal addresses starts from the 
+ *		0 to size of program
+ *		how does the kalloc works?
+ */
 pde_t*
 copyuvm(pde_t *pgdir, uint sz)
 {
@@ -358,15 +414,37 @@ copyuvm(pde_t *pgdir, uint sz)
   if((d = setupkvm()) == 0)
     return 0;
   for(i = 0; i < sz; i += PGSIZE){
+	  /*Sairaj:
+	   * get the page table entry for the virtual address 0 to sz
+	   * BUT where is 0 virtual address mapped since all virtual addresses are
+	   * wrt to the kernbase
+	   */
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+		/* Sairaj: Source PTE should always exists since we need to make the
+		 * copy for it 
+		 */
       panic("copyuvm: pte should exist");
     if(!(*pte & PTE_P))
+		/* Sairaj:
+		 * if the page table entry has invalid bit set
+		 */
       panic("copyuvm: page not present");
+	/* Sairaj:
+	 *	get the physical address of the frame in the PTE
+	 */
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
+	/* Sairaj:
+	 *	allocate the frame 
+	 */
     if((mem = kalloc()) == 0)
       goto bad;
+	/*  copy the source frame into the newly allocated frame 
+	 */
     memmove(mem, (char*)P2V(pa), PGSIZE);
+	/* Map the new frame address to the virtual address for the newly allocated
+	 * page directory 
+	 */
     if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {
       kfree(mem);
       goto bad;

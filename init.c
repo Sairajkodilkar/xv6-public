@@ -5,6 +5,16 @@
 #include "user.h"
 #include "fcntl.h"
 
+/* Sairaj:
+ * Does the kernel really uses this file?
+ * because Makefile uses initcode.S
+ * Ans: This is user level init this is called by the initcode.S
+ * so initcode.S acts as bootstrap
+ * now initcode calls the exec hence its entire image is written by the this
+ * code 
+ * This means exec must contain fileio
+ */
+
 char *argv[] = { "sh", 0 };
 
 int

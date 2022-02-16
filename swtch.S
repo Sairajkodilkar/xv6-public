@@ -42,9 +42,15 @@ swtch:
   popl %esi
   popl %ebx
   popl %ebp
-  /* Since scheduler schedules the process this return will go the IP stored on
+  /* Sairaj: 
+  Since scheduler schedules the process this return will go the IP stored on
    * stack of the process 
    * This will go back to the yield() then trap will return and then process
    * again goes to the user space 
    */
+   /* Sairaj
+    * When the process is newly created the eip on the context is pointing to
+	* the the forkret
+	* Hence this ret goes to the forkret
+	*/
   ret

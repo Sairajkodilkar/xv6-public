@@ -70,16 +70,18 @@ myproc(void) {
 // If found, change state to EMBRYO and initialize
 // state required to run in the kernel.
 // Otherwise return 0.
-/* allocates the process:
+/* Sairaj:
+ * allocates the process:
  *		1) allocate a process table entry
  *		2) Mark state as embryou
  *		3) allocate PID
  *		4) Allocate kernel stack
  *		5) allocate space for:
  *				trapeframe
- *				trapreturn
+ *				trapret --> This helps us to back to the userspace from the forkret
  *				context
  *			on the kernel stack
+ *		6) make eip inside the context point to the forket function
  */
 static struct proc*
 allocproc(void)
@@ -111,30 +113,69 @@ found:
 
   // Leave room for trap frame.
   sp -= sizeof *p->tf;
+  /* Sairaj:
+   *	Why not zero the trap frame 
+   */
   p->tf = (struct trapframe*)sp;
 
   // Set up new context to start executing at forkret,
   // which returns to trapret.
+  /* Sairaj:
+   * Why decrease by 4 and write the address of the trapret at that point
+   * Because when scheduler calls switch it pops the context and perform return
+   * instruction which goes to the address stored just above the context
+   */
   sp -= 4;
+  /* Sairaj:
+   *	This helps us to go back to the userspace where the program start
+   *	running from the next instruction onwards
+   */
   *(uint*)sp = (uint)trapret;
 
   sp -= sizeof *p->context;
   p->context = (struct context*)sp;
+  /* Sairaj:
+   *	Make each context register as zero 
+   */
   memset(p->context, 0, sizeof *p->context);
-  /*Start executing at the forkret function */
+  /*Sairaj:
+   * Start executing at the forkret function 
+   * when the switch is perform
+   */
   p->context->eip = (uint)forkret;
+
+  /* Sairaj:
+   *	Who initializes the CS
+   */
 
   return p;
 }
 
 //PAGEBREAK: 32
 // Set up first user process.
+/*Sairaj:
+ *	steps for the initialization
+ *	1) allocate the process
+ *	2) setupthe initial page table 
+ *	3) load the initcode which is the bootstrap code, inside the one page
+ *	4) initialize the trapframe of this init
+ *	5) set the eip as 0: this 0 is wrt to the initcode file hence first
+ *	instruction of the initcode
+ *	6) Make the process state as runnable so when the scheduler runs, it will
+ *	schedule this process
+ */
 void
 userinit(void)
 {
   struct proc *p;
-  /* Who is defining them ? 
+  /* Sairaj:
+   * Who is defining them ? 
    * TODO FIND 
+   *	While linking the binary file to the regular file the linker
+   *	automatically defines the symboles in the form
+   *	_binary_{filename}_start and _binary_{filename}_end and
+   *	_binary_init_code_size
+   *	This helps the program to call these functions.
    */
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
@@ -199,6 +240,10 @@ fork(void)
 {
   int i, pid;
   struct proc *np;
+  /* Sairaj:
+   *  TODO: figure out how this mycpu and myproc works and changes during the
+   *  execution
+   */
   struct proc *curproc = myproc();
 
   // Allocate process.
@@ -207,7 +252,15 @@ fork(void)
   }
 
   // Copy process state from proc.
+  /* Sairaj:
+   * This creates the copy of the entire program space
+   * TODO: investigate why not copy the kernel stack also
+   *		Does copyuvm copies the kernel stack
+   */
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
+	  /*Sairaj:
+	   * if the copy failed then free the kernel stack
+	   */
     kfree(np->kstack);
     np->kstack = 0;
     np->state = UNUSED;
@@ -215,14 +268,24 @@ fork(void)
   }
   np->sz = curproc->sz;
   np->parent = curproc;
+  /* Sairaj:
+   * make the trapframe same as that of the parent frame such that it will
+   * return to the same point
+   */
   *np->tf = *curproc->tf;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 
+  /* Sairaj:
+   *	Copy all the open files
+   */
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
       np->ofile[i] = filedup(curproc->ofile[i]);
+  /* Sairaj:
+   * Set the current working directory same as that of parent process
+   */
   np->cwd = idup(curproc->cwd);
 
   safestrcpy(np->name, curproc->name, sizeof(curproc->name));
@@ -235,6 +298,9 @@ fork(void)
 
   release(&ptable.lock);
 
+  /* Sairaj:
+   * This return follows the tradition path of the systemcall
+   */
   return pid;
 }
 

@@ -14,6 +14,8 @@ extern char end[]; // first address after kernel loaded from ELF file
 // Bootstrap processor starts running C code here.
 // Allocate a real stack and switch to it, first
 // doing some setup required for memory allocator to work.
+/* When and How do we switch from kernel space to the userspace 
+ */
 int
 main(void)
 {
@@ -77,6 +79,9 @@ startothers(void)
   code = P2V(0x7000);
   memmove(code, _binary_entryother_start, (uint)_binary_entryother_size);
 
+  /* Sairaj:
+   *	We start the cpus one by one
+   */
   for(c = cpus; c < cpus+ncpu; c++){
     if(c == mycpu())  // We've started already.
       continue;
@@ -85,10 +90,17 @@ startothers(void)
     // pgdir to use. We cannot use kpgdir yet, because the AP processor
     // is running in low  memory, so we use entrypgdir for the APs too.
     stack = kalloc();
+	/* Sairaj:
+	 *		store the stack address, entry address and entrypgdir
+	 *		for other processors just before the code segment
+	 */
     *(void**)(code-4) = stack + KSTACKSIZE;
     *(void(**)(void))(code-8) = mpenter;
     *(int**)(code-12) = (void *) V2P(entrypgdir);
 
+	/* Sairaj:
+	 * send the start signal to all the processors
+	 */
     lapicstartap(c->apicid, V2P(code));
 
     // wait for cpu to finish mpmain()

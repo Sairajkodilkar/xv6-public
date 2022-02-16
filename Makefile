@@ -141,6 +141,7 @@ bootblock: bootasm.S bootmain.c
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o # The boot loader starting address is 0x7c00-0x7d00
 																				   # The stack will grow down from 0x7c00 to 0x0000
 																				   # How does this info is preserved in bootblock binary ?
+																					#  	In the form of the instruction and operand addresses inside the instructions
 	$(OBJDUMP) -S bootblock.o > bootblock.asm
 	$(OBJCOPY) -S -O binary -j .text bootblock.o bootblock
 	./sign.pl bootblock
