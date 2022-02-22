@@ -43,10 +43,19 @@ kinit2(void *vstart, void *vend)
   kmem.use_lock = 1;
 }
 
+/* Sairaj:
+ *	This adds the pages from the start to end into the free memory list
+ *	This list is nothing but the link list where each free page points to the
+ *	next free page
+ */
 void
 freerange(void *vstart, void *vend)
 {
   char *p;
+  /* Sairaj:
+   *	Rounding up is necessory since we are maintaining the free list of
+   *	pages
+   */
   p = (char*)PGROUNDUP((uint)vstart);
   for(; p + PGSIZE <= (char*)vend; p += PGSIZE)
     kfree(p);
@@ -61,19 +70,29 @@ kfree(char *v)
 {
   struct run *r;
 
-  /*Check if the address is greater than the end address of the kernel
+  /* Sairaj:
+   * Check if the address is greater than the end address of the kernel
    * As we dont want to free the kernel memory space 
+   * and also check if memory is withing the physical memory
    */
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
     panic("kfree");
 
   // Fill with junk to catch dangling refs.
-  /* This is from string.c */
+  /* Sairaj:
+   * This is from string.c 
+   */
   memset(v, 1, PGSIZE);
 
   if(kmem.use_lock)
     acquire(&kmem.lock);
   r = (struct run*)v;
+  /* Sairaj:
+   *	TODO: Investigate 
+   *	What is happening intially 
+   *	is the kem.freelist is dangling ? or is it set somewhere 
+   *	Ideally it should be NULL pointer at the start
+   */
   r->next = kmem.freelist;
   kmem.freelist = r;
   if(kmem.use_lock)

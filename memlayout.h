@@ -1,7 +1,10 @@
 // Memory layout
 
-#define EXTMEM  0x100000            // Start of extended memory (physical address)
-#define PHYSTOP 0xE000000           // Top physical memory (virtual = 8E000000)
+#define EXTMEM  0x100000            // Start of extended memory (physical address
+/* Why use 224 MIB only when you have 512 MIB available pool of memory set while
+ * initializing the memory
+ */
+#define PHYSTOP 0xE000000           // Top physical memory (virtual = 8E000000) 224 MIB
 #define DEVSPACE 0xFE000000         // Other devices are at high addresses (This address if virtual itself)
 
 // Key addresses for address space layout (see kmap in vm.c for layout)

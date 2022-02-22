@@ -393,6 +393,9 @@ sys_chdir(void)
   return 0;
 }
 
+/* Sairaj:
+ *	Why exec is associated with the file and not with the proc?
+ */
 int
 sys_exec(void)
 {

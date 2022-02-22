@@ -19,7 +19,10 @@
 #
 # This code combines elements of bootasm.S and entry.S.
 /* Sairaj:
- *	This code is ran on remaining processors, now since the 
+ *	This code is ran on remaining processors, because the OS code is already
+ *	loaded we need to skip some code hence we require this special code for
+ *	application processors
+ */
 
 .code16           
 .globl start

@@ -33,5 +33,11 @@ trapret:
   popl %fs
   popl %es
   popl %ds
+  /* Now we skip the trapno and the errcode pushed by the vector.S and directly
+   * go to the caller
+   * Reason to skip this when process is forked it does not follow the vector.S
+   * path of the interrupt
+   * Second reason is that it is vector.S does not use "call" but use "jmp"
+   */
   addl $0x8, %esp  # trapno and errcode
   iret # Sairaj: directly go to the caller 

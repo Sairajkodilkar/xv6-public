@@ -22,6 +22,16 @@ main(void)
 	/* The virtual entry is useful here */
 
 	/* effectively allocates 746 pages */
+  /* Sairaj:
+   *	this allocates the 4 MIB at the end of the 
+   *	kernel loading address 
+   *	note that the end is defined inside the linker script
+   *	But why only free 4MIB
+   *		Because we havn't setup the kernel memory mapping yet
+   *		and still using the entrypgdir
+   *		Now to setup the newpagetable we require free memory hence we need
+   *		some initial free memory list
+   */
   kinit1(end, P2V(4*1024*1024)); // phys page allocator
   kvmalloc();      // kernel page table
   mpinit();        // detect other processors
