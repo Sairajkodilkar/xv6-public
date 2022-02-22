@@ -73,7 +73,7 @@ myproc(void) {
 /* Sairaj:
  * allocates the process:
  *		1) allocate a process table entry
- *		2) Mark state as embryou
+ *		2) Mark state as embryo
  *		3) allocate PID
  *		4) Allocate kernel stack
  *		5) allocate space for:
@@ -81,7 +81,7 @@ myproc(void) {
  *				trapret --> This helps us to back to the userspace from the forkret
  *				context
  *			on the kernel stack
- *		6) make eip inside the context point to the forket function
+ *		6) make eip inside the context point to the forkret function
  */
 static struct proc*
 allocproc(void)
@@ -185,9 +185,12 @@ userinit(void)
   /* setup the initial page table to point to the kernel space */
   if((p->pgdir = setupkvm()) == 0)
     panic("userinit: out of memory?");
+  /* The binary initcode is the bootstrap code for the init 
+   */
   inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
   p->sz = PGSIZE;
   memset(p->tf, 0, sizeof(*p->tf));
+  /* Setup the trapframe manually since its a first process */
   p->tf->cs = (SEG_UCODE << 3) | DPL_USER;
   p->tf->ds = (SEG_UDATA << 3) | DPL_USER;
   p->tf->es = p->tf->ds;
@@ -206,6 +209,9 @@ userinit(void)
   // because the assignment might not be atomic.
   acquire(&ptable.lock);
 
+  /* Sairaj:
+   * Mark the state as runnable 
+   */
   p->state = RUNNABLE;
 
   release(&ptable.lock);
@@ -256,6 +262,8 @@ fork(void)
    * This creates the copy of the entire program space
    * TODO: investigate why not copy the kernel stack also
    *		Does copyuvm copies the kernel stack
+   *		Because the allocproc already takes care of it and its a part of
+   *		process table not the process virtual memory;
    */
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
 	  /*Sairaj:

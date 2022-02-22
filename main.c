@@ -33,7 +33,17 @@ main(void)
    *		some initial free memory list
    */
   kinit1(end, P2V(4*1024*1024)); // phys page allocator
+  /*  Sairaj:
+   *	This allocates the basic page table for the kernel containing the
+   *	kernel address space for code and physical memory 
+   */
   kvmalloc();      // kernel page table
+  /* initialize all the hardware 
+   */
+  /* Sairaj:
+   * Detect other processors using the multiprocessor specifications and
+   * intialize the CPU array
+   */
   mpinit();        // detect other processors
   lapicinit();     // interrupt controller
   seginit();       // segment descriptors
@@ -46,6 +56,9 @@ main(void)
   binit();         // buffer cache
   fileinit();      // file table
   ideinit();       // disk 
+  /* Sairaj:
+   *	Start the other processors
+   */
   startothers();   // start other processors
   kinit2(P2V(4*1024*1024), P2V(PHYSTOP)); // must come after startothers()
   userinit();      // first user process

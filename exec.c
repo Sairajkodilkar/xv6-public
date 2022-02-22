@@ -83,6 +83,8 @@ exec(char *path, char **argv)
 	/* Sairaj:
 	 *	In case of stack the ph.vaddr and ph.memsz both are zero henc the
 	 *	condition newsz < oldsz becomes true and return sz is just oldsz
+	 *
+	 *	Why are we so sure that the virtual addressing will start from the 0 ?
 	 */
     if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz)) == 0)
       goto bad;
@@ -124,6 +126,7 @@ exec(char *path, char **argv)
       goto bad;
 	/* Sairaj:
 	 *	decrement the stack pointer in the multiple of the 4 bytes only
+	 *	since we can only push 4 byte at a time on stack
 	 */
     sp = (sp - (strlen(argv[argc]) + 1)) & ~3;
 	/* Sairaj:

@@ -12,6 +12,9 @@ pde_t *kpgdir;  // for use in scheduler()
 
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
+/* Sairaj :
+ *	Setup the global descriptor table for the the given cpuid
+ */
 void
 seginit(void)
 {
@@ -84,9 +87,18 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
   char *a, *last;
   pte_t *pte;
 
+  /* Sairaj:
+   *	We need to map that entire page hence round it down
+   */
   a = (char*)PGROUNDDOWN((uint)va);
+  /* Sairaj:
+   *	Get the last page within the given virtual address
+   */
   last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
   for(;;){
+	  /* Sairaj:
+	   *	Allocate the page table entry for the given virtual address
+	   */
     if((pte = walkpgdir(pgdir, a, 1)) == 0)
       return -1;
     if(*pte & PTE_P)
@@ -129,10 +141,14 @@ static struct kmap {
   uint phys_end;
   int perm;
 } kmap[] = {
+	/* Sairaj: Map physical 0 to 1 MB */
  { (void*)KERNBASE, 0,             EXTMEM,    PTE_W}, // I/O space
+ /* Sairaj: Map 1 MB to start of data segment*/
  { (void*)KERNLINK, V2P(KERNLINK), V2P(data), 0},     // kern text+rodata
+ /* Sairaj: Map start of data segment till the end of the physical memory */
  { (void*)data,     V2P(data),     PHYSTOP,   PTE_W}, // kern data+memory
-/* Here the end is zero because of the unsigned nature of the function using
+/* Sairaj:
+ * Here the end is zero because of the unsigned nature of the function using
  * this the -0xFE000000 becomes 0xFFFFFFFF - 0xFE000000 + 1 = remaining space
  * at the top/end of the memory
  */
@@ -298,6 +314,9 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
       n = sz - i;
     else
       n = PGSIZE;
+	/* Since we have not yet initialize the CR# with the given virtual memory
+	 * of the process we need to use the virtual memory space of the kernel
+	 */
     if(readi(ip, P2V(pa), offset+i, n) != n)
       return -1;
   }
@@ -318,7 +337,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
     return oldsz;
 
   /* TODO: understand why this is round up 
-   *	Because the oldsz is allocated inside a page 
+   *	Because the oldsz is already allocated inside a page 
    */
   a = PGROUNDUP(oldsz);
   /* Sairaj:
@@ -380,8 +399,9 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 			pa = PTE_ADDR(*pte);
 			if(pa == 0)
 				panic("kfree");
-			/* Get the kernel space virtual address for the given physical
-			 * address
+			/* Sairaj:
+			 * Get the kernel space virtual address for the given physical
+			 * address and add it to the free list
 			 */
 			char *v = P2V(pa);
 			kfree(v);
@@ -400,13 +420,19 @@ freevm(pde_t *pgdir)
 
 	if(pgdir == 0)
 		panic("freevm: no pgdir");
+	/* Sairaj:
+	 *	Now this deallocates the memory required by the program but the
+	 * allocated page tables are still in use hence free them
+	 */
 	deallocuvm(pgdir, KERNBASE, 0);
 	for(i = 0; i < NPDENTRIES; i++){
+		/* Sairaj: free each allocated page */
 		if(pgdir[i] & PTE_P){
 			char * v = P2V(PTE_ADDR(pgdir[i]));
 			kfree(v);
 		}
 	}
+	/* Sairaj: Free the page directory */
 	kfree((char*)pgdir);
 }
 
