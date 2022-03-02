@@ -35,6 +35,11 @@ struct {
   struct buf head;
 } bcache;
 
+/*Sairaj:
+ *	The buffer cache is the doubly linked list of buffer
+ *	Ths function simply iterate over the array and make the doubly 
+ *	link list of it
+ */
 void
 binit(void)
 {
@@ -58,6 +63,17 @@ binit(void)
 // Look through buffer cache for block on device dev.
 // If not found, allocate a buffer.
 // In either case, return locked buffer.
+/* Sairaj:
+ *	algorithm
+ *		Check if the block already exists in the doubly linked linst
+ *		If exist increment the reference count and sleep until the block is
+ *		released
+ *			The xv6 book mentions that the block may not be valid after the
+ *			sleep so research it but this is not the case here
+ *
+ *		If does not exist recycle a block which is not dirty and no one is
+ *		referring to it
+ */
 static struct buf*
 bget(uint dev, uint blockno)
 {
@@ -93,6 +109,12 @@ bget(uint dev, uint blockno)
 }
 
 // Return a locked buf with the contents of the indicated block.
+/* Sairaj:
+ *	get the buffer for the given block
+ *	check if the buffer is valid or not
+ *	if buffer is not valid then read the corrosponding buffer from using IDE
+ *	driver
+ */
 struct buf*
 bread(uint dev, uint blockno)
 {
@@ -106,6 +128,10 @@ bread(uint dev, uint blockno)
 }
 
 // Write b's contents to disk.  Must be locked.
+/*Sairaj:
+ *	Mark the buffer flag as dirty
+ *	and write the buffer on to the disk
+ */
 void
 bwrite(struct buf *b)
 {
@@ -117,6 +143,11 @@ bwrite(struct buf *b)
 
 // Release a locked buffer.
 // Move to the head of the MRU list.
+/* Sairaj:
+ *	If the reference count to the buffer is 0 
+ *	then make the buffer as head of the doubly linked list
+ *
+ */
 void
 brelse(struct buf *b)
 {

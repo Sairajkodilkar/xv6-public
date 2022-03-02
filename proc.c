@@ -453,7 +453,7 @@ scheduler(void)
 
 	  /* Sairaj:
 	   * this function only returns when the process has yield as a result of
-	   * the timer interrupt
+	   * the timer interrupt /sleep/wait
 	   * 
 	   * At the start all registers except the eip in the context are zero 
 	   * The eip is pointing to the entry to the process 

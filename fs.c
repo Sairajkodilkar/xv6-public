@@ -53,6 +53,9 @@ bzero(int dev, int bno)
 // Blocks.
 
 // Allocate a zeroed disk block.
+/* Sairaj:
+ *	This returns the block number of the allocated block
+ */
 static uint
 balloc(uint dev)
 {
@@ -60,10 +63,19 @@ balloc(uint dev)
   struct buf *bp;
 
   bp = 0;
+  /* Sairaj:
+   *	From 0 to the size of the file system image
+   */
   for(b = 0; b < sb.size; b += BPB){
+	  /*Sairaj:
+	   * Read the bitmap block
+	   */
     bp = bread(dev, BBLOCK(b, sb));
     for(bi = 0; bi < BPB && b + bi < sb.size; bi++){
       m = 1 << (bi % 8);
+	  /* IF the free block is found
+	   * return it
+	   */
       if((bp->data[bi/8] & m) == 0){  // Is block free?
         bp->data[bi/8] |= m;  // Mark block in use.
         log_write(bp);
@@ -78,6 +90,9 @@ balloc(uint dev)
 }
 
 // Free a disk block.
+/* Sairaj:
+ *	Mark the block as the free block
+ */
 static void
 bfree(int dev, uint b)
 {
@@ -199,6 +214,11 @@ ialloc(uint dev, short type)
   struct dinode *dip;
 
   for(inum = 1; inum < sb.ninodes; inum++){
+	  /* Sairaj:
+	   *	Inodes are arranged sequencially
+	   *	read each inode sequencially and decide which one is free and
+	   *	allocate it
+	   */
     bp = bread(dev, IBLOCK(inum, sb));
     dip = (struct dinode*)bp->data + inum%IPB;
     if(dip->type == 0){  // a free inode
@@ -224,6 +244,9 @@ iupdate(struct inode *ip)
   struct dinode *dip;
 
   bp = bread(ip->dev, IBLOCK(ip->inum, sb));
+  /* Sairaj:
+   *	Copy everything to the diskbuffer and write it
+   */
   dip = (struct dinode*)bp->data + ip->inum%IPB;
   dip->type = ip->type;
   dip->major = ip->major;
@@ -246,6 +269,10 @@ iget(uint dev, uint inum)
   acquire(&icache.lock);
 
   // Is the inode already cached?
+  /* Sairaj:
+   * If the inode is already cached, return a entry from the inode cached
+   * otherwise remember the empty slot
+   */
   empty = 0;
   for(ip = &icache.inode[0]; ip < &icache.inode[NINODE]; ip++){
     if(ip->ref > 0 && ip->dev == dev && ip->inum == inum){
@@ -265,6 +292,10 @@ iget(uint dev, uint inum)
   ip->dev = dev;
   ip->inum = inum;
   ip->ref = 1;
+  /*Sairaj:
+   *	Why valid is 0
+   *	This means inode has not been read from the disk
+   */
   ip->valid = 0;
   release(&icache.lock);
 
@@ -413,13 +444,23 @@ itrunc(struct inode *ip)
 
   for(i = 0; i < NDIRECT; i++){
     if(ip->addrs[i]){
+		/* Sairaj: Free the block number */
       bfree(ip->dev, ip->addrs[i]);
       ip->addrs[i] = 0;
     }
   }
 
+  /* Sairaj:
+   *	What is so special about the NDIRECT
+   */
   if(ip->addrs[NDIRECT]){
     bp = bread(ip->dev, ip->addrs[NDIRECT]);
+	/* Read the last possible block for the file
+	 * Iterate over this block data 12 times
+	 * If any of the int is not zero then free that block
+	 * I guess the last block on the disk inself contain the remaining blocks
+	 * of tht file
+	 */
     a = (uint*)bp->data;
     for(j = 0; j < NINDIRECT; j++){
       if(a[j])
