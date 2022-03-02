@@ -149,7 +149,7 @@ static struct kmap {
  { (void*)data,     V2P(data),     PHYSTOP,   PTE_W}, // kern data+memory
 /* Sairaj:
  * Here the end is zero because of the unsigned nature of the function using
- * this the -0xFE000000 becomes 0xFFFFFFFF - 0xFE000000 + 1 = remaining space
+ * this the -0xFE000000 becomes 0xFFFFFFFF - 0xFE000000 + 1 = size of the remaining space
  * at the top/end of the memory
  */
  { (void*)DEVSPACE, DEVSPACE,      0,         PTE_W}, // more devices
