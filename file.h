@@ -5,6 +5,7 @@ struct file {
   char writable;
   struct pipe *pipe;
   struct inode *ip;
+  /*Sairaj: Offset with in the file */
   uint off;
 };
 
@@ -18,10 +19,31 @@ struct inode {
   int valid;          // inode has been read from disk?
 
   short type;         // copy of disk inode
+  /* Sairaj:
+   * The major number identifies the driver associated with the device
+   */
   short major;
+
+  /* Sairaj:
+   *	The minor number is used only by the driver specified by the major number
+   */
   short minor;
+
+  /* Sairaj:
+   *	number of directory entries that refer to this file
+   */
   short nlink;
+  /* Sairaj:
+   *	Number of bytes of content in the file
+   */
   uint size;
+  /* Sairaj: 
+   *	block number of the disk block holding the inode 
+   *	The first NDIRECT blocks are directly mapped meaning there block number
+   *	is directly stored onto the addrs array
+   *	but the last bloc specifies the indirectl mapping i.e block numbers are
+   *	stored on the block whos block no. is stored on the address
+   */
   uint addrs[NDIRECT+1];
 };
 

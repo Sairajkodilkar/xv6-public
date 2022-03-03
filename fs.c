@@ -206,6 +206,9 @@ static struct inode* iget(uint dev, uint inum);
 // Allocate an inode on device dev.
 // Mark it as allocated by  giving it type type.
 // Returns an unlocked but allocated and referenced inode.
+/*  Sairaj:
+ *		This actually allocates the inode on the dis
+ */
 struct inode*
 ialloc(uint dev, short type)
 {
@@ -261,6 +264,12 @@ iupdate(struct inode *ip)
 // Find the inode with number inum on device dev
 // and return the in-memory copy. Does not lock
 // the inode and does not read it from disk.
+/* Sairaj: 
+ *		Inode simply gets the in memory copy of the given inode
+ *		This uses the icache to cache the inodes
+ *	TODO: investigate: why type is not assigned in this function
+ *			Because this is done is in the ilock function
+ */
 static struct inode*
 iget(uint dev, uint inum)
 {

@@ -261,8 +261,15 @@ create(char *path, short type, short major, short minor)
     panic("create: ialloc");
 
   ilock(ip);
+  /* Sairaj:
+   *	Related to driver, see the inode structure
+   */
   ip->major = major;
   ip->minor = minor;
+  /* Sairaj:
+   *	Number of links to the INODE
+   *	this is one because the file is being created 
+   */
   ip->nlink = 1;
   iupdate(ip);
 
