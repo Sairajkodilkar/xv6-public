@@ -179,6 +179,9 @@ switchuvm(struct proc *p)
 
 // Load the initcode into address 0 of pgdir.
 // sz must be less than a page.
+/* Sairaj:
+ *	TODO: changed to use the demand paging
+ */
 	void
 inituvm(pde_t *pgdir, char *init, uint sz)
 {
@@ -255,6 +258,13 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz, uint flags)
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
 // need to be less than oldsz.  oldsz can be larger than the actual
 // process size.  Returns the new process size.
+/* Sairaj:
+ *	TODO: remove all the virtual addrs from the v2dmap lying between oldsz to
+ *	newsz
+ *	This involves the block release of the swap space if the page is not
+ *	present
+ */
+
 	int
 deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
@@ -315,6 +325,10 @@ clearpteu(pde_t *pgdir, char *uva)
 
 // Given a parent process's page table, create a copy
 // of it for a child.
+/* Sairaj:
+ *	TODO: for demand paging pass the argument of the mapping for addreeses in
+ *	pagedir
+ */
 	pde_t*
 copyuvm(pde_t *pgdir, uint sz)
 {
@@ -332,6 +346,8 @@ copyuvm(pde_t *pgdir, uint sz)
 			panic("copyuvm: page not present please add the support for demand paging");
 		pa = PTE_ADDR(*pte);
 		flags = PTE_FLAGS(*pte);
+		/* TODO: do not allocate the space here, just create the mapping
+		 */
 		if((mem = kalloc()) == 0)
 			goto bad;
 		memmove(mem, (char*)P2V(pa), PGSIZE);
@@ -365,6 +381,11 @@ uva2ka(pde_t *pgdir, char *uva)
 // Copy len bytes from p to user address va in page table pgdir.
 // Most useful when pgdir is not the current page table.
 // uva2ka ensures this only works for PTE_U pages.
+/* Sairaj:
+ *	This is creating the complexities for the demand paging
+ *	TODO: before copying out please swapin that page
+ *	for that purpose we need mapping as the argument
+ */
 	int
 copyout(pde_t *pgdir, uint va, void *p, uint len)
 {

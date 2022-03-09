@@ -17,6 +17,7 @@ void map2file_range(struct proc_v2drive_map *pv2dm, uint start, uint end, uint i
 	}
 	return;
 }
+
 void map2swap_range(struct proc_v2drive_map *pv2dm, uint start, uint end) {
 	uint a = PGROUNDUP(start);
 	for(; a < end; a += PGSIZE) {
@@ -99,7 +100,7 @@ exec(char *path, char **argv)
 	/* Map only the inaccessible page to the swap,
 	 * Do not swap out the stack page as we need it to store the arguments
 	 */
-	//map2swap_range(&(curproc->pv2dm), oldsz, PGSIZE);
+	map2swap_range(&(curproc->pv2dm), oldsz, PGSIZE);
 
 	sp = sz;
 

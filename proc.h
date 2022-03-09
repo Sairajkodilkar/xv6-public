@@ -66,7 +66,7 @@ struct proc {
 
 int update_proc_v2drive_map(struct proc_v2drive_map *pv2dm, uint vaddr_start, uint vaddr_end);
 
-void map2file_vaddr(struct proc_v2drive_map *pv2dm, uint vaddr, uint inum, uint offset);
+void map2file_vaddr(struct proc_v2drive_map *pv2dm, uint vaddr, uint inum, uint offset) ;
 // Process memory is laid out contiguously, low addresses first:
 //   text
 //   original data and bss
