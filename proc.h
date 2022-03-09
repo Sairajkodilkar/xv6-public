@@ -1,4 +1,9 @@
 // Per-CPU state
+#ifndef __PROC_H
+#define __PROC_H
+#include "fs.h"
+#include "drive_mapping.h"
+
 struct cpu {
   uchar apicid;                // Local APIC ID
   struct context *scheduler;   // swtch() here to enter scheduler
@@ -34,6 +39,13 @@ struct context {
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
+/* Max number of pages per process */
+#define MAX_PPP (128)
+
+struct proc_v2drive_map {
+	struct v2drive_map v2dm[MAX_PPP]; 
+	uint size;
+};
 // Per-process state
 struct proc {
   uint sz;                     // Size of process memory (bytes)
@@ -49,6 +61,7 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+	struct proc_v2drive_map pv2dm;
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -56,3 +69,5 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+#endif

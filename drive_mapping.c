@@ -12,8 +12,10 @@ void map2file(struct v2drive_map *vdm, uint inum, uint offset){
 	return;
 }
 
-void map2swap(struct v2drive_map *vdm, uint block_num){
+void map2swap(struct v2drive_map *vdm, uint block_num[BPP]){
 	vdm->type = SWAP;
-	vdm->drive.sm.block_num = block_num;
+	/* TODO: use mem move */
+	for(int i = 0; i < BPP; i++)
+		vdm->drive.sm.block_num[i] = block_num[i];
 	return;
 }
