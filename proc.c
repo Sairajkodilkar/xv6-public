@@ -540,9 +540,32 @@ int update_proc_v2drive_map(struct proc_v2drive_map *pv2dm, uint vaddr_start, ui
 	}
 	uint start = PGROUNDUP(vaddr_start);
 	for(; start < vaddr_end; start += PGSIZE) {
+		cprintf("proc_v2drive %p\n", start);
 		assign_virtual_addr(&(pv2dm->v2dm[pv2dm->size]), start);
 		pv2dm->size++;
 	}
 	return vaddr_end;
 }
 
+void map2file_vaddr(struct proc_v2drive_map *pv2dm, uint vaddr, uint inum, uint offset) {
+	for(uint i = 0; i < pv2dm->size; i++) {
+		if(pv2dm->v2dm[i].vaddr == vaddr) {
+			map2file(&(pv2dm->v2dm[i]), inum, offset);
+			return;
+		}
+	}
+	return;
+}
+
+void map2swap_vaddr(struct proc_v2drive_map *pv2dm, uint vaddr) {
+	uint block_num[BPP];
+	for(uint i = 0; i < pv2dm->size; i++) {
+		if(pv2dm->v2dm[i].vaddr == vaddr) {
+			for(int j = 0; j < BPP; j++) {
+				block_num[j] = 0;//alloc_swap_block();
+			}
+			map2swap(&(pv2dm->v2dm[i]), block_num);
+			return;
+		}
+	}
+}

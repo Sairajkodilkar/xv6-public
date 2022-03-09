@@ -231,6 +231,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz, uint flags)
 
 	a = PGROUNDUP(oldsz);
 	for(; a < newsz; a += PGSIZE){
+		cprintf("allouvm %p\n", a);
 		if(flags | PTE_P) {
 			mem = kalloc();
 			if(mem == 0){
