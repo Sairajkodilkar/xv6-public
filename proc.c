@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "proc.h"
 
 struct {
   struct spinlock lock;
@@ -532,3 +533,16 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+int update_proc_v2drive_map(struct proc_v2drive_map *pv2dm, uint vaddr_start, uint vaddr_end) {
+	if(pv2dm->size > MAX_PPP) {
+		panic("update proc v2drive map: limit exceed");
+	}
+	uint start = PGROUNDUP(vaddr_start);
+	for(; start < vaddr_end; start += PGSIZE) {
+		assign_virtual_addr(&(pv2dm->v2dm[pv2dm->size]), start);
+		pv2dm->size++;
+	}
+	return vaddr_end;
+}
+

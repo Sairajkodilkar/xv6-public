@@ -6,6 +6,7 @@
 #include "defs.h"
 #include "x86.h"
 #include "elf.h"
+#include "drive_mapping.h"
 
 int
 exec(char *path, char **argv)
@@ -51,6 +52,7 @@ exec(char *path, char **argv)
       goto bad;
     if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz, PTE_W | PTE_U | PTE_P)) == 0)
       goto bad;
+		sz = update_proc_v2drive_map(&(curproc->pv2dm), sz, ph.vaddr + ph.memsz);
     if(ph.vaddr % PGSIZE != 0)
       goto bad;
     if(loaduvm(pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
