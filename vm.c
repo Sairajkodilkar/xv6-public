@@ -243,14 +243,14 @@ allocuvm(pde_t *pgdir, struct proc_v2drive_map *pv2dm, uint oldsz, uint newsz, u
 			mem = kalloc();
 			if(mem == 0){
 				cprintf("allocuvm out of memory\n");
-				deallocuvm(pgdir, newsz, oldsz);
+				deallocuvm(pgdir, pv2dm, newsz, oldsz);
 				return 0;
 			}
 			memset(mem, 0, PGSIZE);
 		}
 		if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), flags) < 0){
 			cprintf("allocuvm out of memory (2)\n");
-			deallocuvm(pgdir, newsz, oldsz);
+			deallocuvm(pgdir, pv2dm, newsz, oldsz);
 			kfree(mem);
 			return 0;
 		}
@@ -270,7 +270,7 @@ allocuvm(pde_t *pgdir, struct proc_v2drive_map *pv2dm, uint oldsz, uint newsz, u
  */
 
 	int
-deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
+deallocuvm(pde_t *pgdir, struct proc_v2drive_map *pv2dm, uint oldsz, uint newsz)
 {
 	pte_t *pte;
 	uint a, pa;
@@ -299,14 +299,19 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 // Free a page table and all the physical memory pages
 // in the user part.
 /* TODO: change it for the demand paging */
+
+void 
+freevm2(pde_t *pgdir, struct proc_v2drive_map *pv2dm) {
+	if(pgdir == 0)
+		panic("freevm: no pgdir");
+	deallocuvm(pgdir, pv2dm, KERNBASE, 0);
+	freevm(pgdir);
+}
 	void
 freevm(pde_t *pgdir)
 {
 	uint i;
 
-	if(pgdir == 0)
-		panic("freevm: no pgdir");
-	deallocuvm(pgdir, KERNBASE, 0);
 	for(i = 0; i < NPDENTRIES; i++){
 		if(pgdir[i] & PTE_P){
 			char * v = P2V(PTE_ADDR(pgdir[i]));
@@ -334,6 +339,7 @@ clearpteu(pde_t *pgdir, char *uva)
 /* Sairaj:
  *	TODO: for demand paging pass the argument of the mapping for addreeses in
  *	pagedir
+ *	This function neeeds some deep work
  */
 	pde_t*
 copyuvm(pde_t *pgdir, uint sz)

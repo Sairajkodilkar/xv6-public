@@ -169,7 +169,7 @@ growproc(int n)
       return -1;
 		map2swap_range(&(curproc->pv2dm), oldsz, sz);
   } else if(n < 0){
-    if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
+    if((sz = deallocuvm(curproc->pgdir, &(curproc->pv2dm), sz, sz + n)) == 0)
       return -1;
   }
   curproc->sz = sz;
@@ -292,7 +292,7 @@ wait(void)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        freevm(p->pgdir);
+        freevm2(p->pgdir, &(p->pv2dm));
         p->pid = 0;
         p->parent = 0;
         p->name[0] = 0;
