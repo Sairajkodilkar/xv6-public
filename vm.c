@@ -109,7 +109,7 @@ static struct kmap {
 	int perm;
 } kmap[] = {
 	{ (void*)KERNBASE, 0,             EXTMEM,    PTE_W | PTE_P}, // I/O space
-	{ (void*)KERNLINK, V2P(KERNLINK), V2P(data), 0 | PTE_P},     // kern text+rodata
+	{ (void*)KERNLINK, V2P(KERNLINK), V2P(data), PTE_P},     // kern text+rodata
 	{ (void*)data,     V2P(data),     PHYSTOP,   PTE_W | PTE_P}, // kern data+memory
 	{ (void*)DEVSPACE, DEVSPACE,      0,         PTE_W | PTE_P}, // more devices
 };
@@ -181,6 +181,9 @@ switchuvm(struct proc *p)
 // sz must be less than a page.
 /* Sairaj:
  *	TODO: changed to use the demand paging
+ *	add mapping to the proc table
+ *	Dont swapout the inituvm initially let the demand paging handle it
+ *	according to the page replacement algorithm
  */
 	void
 inituvm(pde_t *pgdir, char *init, uint sz)
@@ -234,7 +237,6 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz, uint flags)
 
 	a = PGROUNDUP(oldsz);
 	for(; a < newsz; a += PGSIZE){
-		cprintf("allouvm %p\n", a);
 		if(flags | PTE_P) {
 			mem = kalloc();
 			if(mem == 0){
@@ -381,10 +383,9 @@ uva2ka(pde_t *pgdir, char *uva)
 // Copy len bytes from p to user address va in page table pgdir.
 // Most useful when pgdir is not the current page table.
 // uva2ka ensures this only works for PTE_U pages.
-/* Sairaj:
- *	This is creating the complexities for the demand paging
- *	TODO: before copying out please swapin that page
- *	for that purpose we need mapping as the argument
+/* Demand paging:
+ *	copyout assumes that the va is already in memory
+ *	User must check to see if p and va both are present in memory
  */
 	int
 copyout(pde_t *pgdir, uint va, void *p, uint len)
@@ -407,6 +408,21 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 		va = va0 + PGSIZE;
 	}
 	return 0;
+}
+
+void map2file_range(struct proc_v2drive_map *pv2dm, uint start, uint end, uint inum, uint offset) {
+	uint a = PGROUNDUP(start);
+	for(; a < end; a += PGSIZE, offset += PGSIZE) {
+		map2file_vaddr(pv2dm, a, inum, offset);
+	}
+	return;
+}
+
+void map2swap_range(struct proc_v2drive_map *pv2dm, uint start, uint end) {
+	uint a = PGROUNDUP(start);
+	for(; a < end; a += PGSIZE) {
+		map2swap_vaddr(pv2dm, a);
+	}
 }
 
 //PAGEBREAK!

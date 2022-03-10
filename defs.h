@@ -9,6 +9,7 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+struct proc_v2drive_map;
 
 // bio.c
 void            binit(void);
@@ -120,6 +121,10 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+void						map2file_vaddr(struct proc_v2drive_map *, uint, uint, uint );
+void						map2swap_vaddr(struct proc_v2drive_map *, uint);
+void						map2file_range(struct proc_v2drive_map *pv2dm, uint start, uint end, uint inum, uint offset);
+void						map2swap_range(struct proc_v2drive_map *pv2dm, uint start, uint end);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

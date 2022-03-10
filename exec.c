@@ -9,22 +9,6 @@
 #include "drive_mapping.h"
 #include "file.h"
 
-void map2file_range(struct proc_v2drive_map *pv2dm, uint start, uint end, uint inum, uint offset) {
-	uint a = PGROUNDUP(start);
-	for(; a < end; a += PGSIZE, offset += PGSIZE) {
-		cprintf("map2file %p\n", a);
-		map2file_vaddr(pv2dm, a, inum, offset);
-	}
-	return;
-}
-
-void map2swap_range(struct proc_v2drive_map *pv2dm, uint start, uint end) {
-	uint a = PGROUNDUP(start);
-	for(; a < end; a += PGSIZE) {
-		map2swap_vaddr(pv2dm, a);
-	}
-}
-
 int
 exec(char *path, char **argv)
 {
@@ -122,6 +106,8 @@ exec(char *path, char **argv)
 	sp -= (3+argc+1) * 4;
 	if(copyout(pgdir, sp, ustack, (3+argc+1)*4) < 0)
 		goto bad;
+
+	//swapout_vaddr(&(curproc->pv2dm), oldsz + PGSIZE);
 
 	// Save program name for debugging.
 	for(last=s=path; *s; s++)

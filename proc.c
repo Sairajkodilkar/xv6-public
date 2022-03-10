@@ -540,7 +540,6 @@ int update_proc_v2drive_map(struct proc_v2drive_map *pv2dm, uint vaddr_start, ui
 	}
 	uint start = PGROUNDUP(vaddr_start);
 	for(; start < vaddr_end; start += PGSIZE) {
-		cprintf("proc_v2drive %p\n", start);
 		assign_virtual_addr(&(pv2dm->v2dm[pv2dm->size]), start);
 		pv2dm->size++;
 	}
