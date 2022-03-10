@@ -52,7 +52,7 @@ exec(char *path, char **argv)
 			goto bad;
 		if(ph.vaddr + ph.memsz < ph.vaddr)
 			goto bad;
-		if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz, PTE_W | PTE_U | PTE_P)) == 0)
+		if((sz = allocuvm(pgdir, &(curproc->pv2dm), sz, ph.vaddr + ph.memsz, PTE_W | PTE_U | PTE_P)) == 0)
 			goto bad;
 
 		update_proc_v2drive_map(&(curproc->pv2dm), oldsz, ph.vaddr + ph.memsz);
@@ -73,13 +73,12 @@ exec(char *path, char **argv)
 	sz = PGROUNDUP(sz);
 	oldsz = sz;
 
-	if((sz = allocuvm(pgdir, sz, sz + PGSIZE, PTE_P | PTE_W)) == 0)
+	if((sz = allocuvm(pgdir, &(curproc->pv2dm), sz, sz + PGSIZE, PTE_P | PTE_W)) == 0)
 		goto bad;
 
-	if((sz = allocuvm(pgdir, sz, sz + PGSIZE, PTE_P | PTE_U | PTE_W)) == 0)
+	if((sz = allocuvm(pgdir, &(curproc->pv2dm), sz, sz + PGSIZE, PTE_P | PTE_U | PTE_W)) == 0)
 		goto bad;
 
-	update_proc_v2drive_map(&(curproc->pv2dm), oldsz, oldsz + 2 * PGSIZE);
 
 	/* Map only the inaccessible page to the swap,
 	 * Do not swap out the stack page as we need it to store the arguments

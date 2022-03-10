@@ -225,10 +225,12 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 // Allocate page tables and physical memory to grow process from oldsz to
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
 	int
-allocuvm(pde_t *pgdir, uint oldsz, uint newsz, uint flags)
+allocuvm(pde_t *pgdir, struct proc_v2drive_map *pv2dm, uint oldsz, uint newsz, uint flags)
 {
 	char *mem = 0;
 	uint a;
+
+	update_proc_v2drive_map(pv2dm, oldsz, newsz);
 
 	if(newsz >= KERNBASE)
 		return 0;
@@ -273,6 +275,7 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 	pte_t *pte;
 	uint a, pa;
 
+
 	if(newsz >= oldsz)
 		return oldsz;
 
@@ -295,6 +298,7 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 
 // Free a page table and all the physical memory pages
 // in the user part.
+/* TODO: change it for the demand paging */
 	void
 freevm(pde_t *pgdir)
 {

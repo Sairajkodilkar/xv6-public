@@ -159,13 +159,15 @@ userinit(void)
 int
 growproc(int n)
 {
-  uint sz;
+  uint sz, oldsz;
   struct proc *curproc = myproc();
 
   sz = curproc->sz;
   if(n > 0){
-    if((sz = allocuvm(curproc->pgdir, sz, sz + n, PTE_P | PTE_U | PTE_W)) == 0)
+		oldsz = sz;
+    if((sz = allocuvm(curproc->pgdir, &(curproc->pv2dm), sz, sz + n, PTE_P | PTE_U | PTE_W)) == 0)
       return -1;
+		map2swap_range(&(curproc->pv2dm), oldsz, sz);
   } else if(n < 0){
     if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;
@@ -540,6 +542,8 @@ int update_proc_v2drive_map(struct proc_v2drive_map *pv2dm, uint vaddr_start, ui
 	}
 	uint start = PGROUNDUP(vaddr_start);
 	for(; start < vaddr_end; start += PGSIZE) {
+		if(pv2dm->size >= MAX_PPP)
+			panic("pv2dm: size exceed\n");
 		assign_virtual_addr(&(pv2dm->v2dm[pv2dm->size]), start);
 		pv2dm->size++;
 	}

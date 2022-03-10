@@ -40,7 +40,7 @@ struct context {
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 /* Max number of pages per process */
-#define MAX_PPP (128)
+#define MAX_PPP (512)
 
 struct proc_v2drive_map {
 	struct v2drive_map v2dm[MAX_PPP]; 
