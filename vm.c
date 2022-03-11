@@ -102,6 +102,11 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 
 // This table defines the kernel's mappings, which are present in
 // every process's page table.
+/* Sairaj:
+ *		Make the data to PHYSTOP unavailable at the start 
+ *		i.e make PTE_P as 0;
+ *		when page is swapped in make this bit as 1
+ */
 static struct kmap {
 	void *virt;
 	uint phys_start;
@@ -263,9 +268,7 @@ allocuvm(pde_t *pgdir, struct proc_v2drive_map *pv2dm, uint oldsz, uint newsz, u
 // need to be less than oldsz.  oldsz can be larger than the actual
 // process size.  Returns the new process size.
 /* Sairaj:
- *	TODO: remove all the virtual addrs from the v2dmap lying between oldsz to
- *	newsz
- *	This involves the block release of the swap space if the page is not
+ *	TODO:  This involves the block release of the swap space if the page is not
  *	present
  */
 
@@ -298,8 +301,7 @@ deallocuvm(pde_t *pgdir, struct proc_v2drive_map *pv2dm, uint oldsz, uint newsz)
 
 // Free a page table and all the physical memory pages
 // in the user part.
-/* TODO: change it for the demand paging */
-
+//
 void 
 freevm2(pde_t *pgdir, struct proc_v2drive_map *pv2dm) {
 	if(pgdir == 0)
@@ -339,19 +341,27 @@ clearpteu(pde_t *pgdir, char *uva)
 /* Sairaj:
  *	TODO: for demand paging pass the argument of the mapping for addreeses in
  *	pagedir
- *	This function neeeds some deep work
+ *	This function needs some deep work
+ *	copy the file system addresses has it is 
+ *	but for copying the swap addreses you have to allocate the new swap space
  */
 	pde_t*
-copyuvm(pde_t *pgdir, uint sz)
+copyuvm(pde_t *pgdir, uint sz, struct proc_v2drive_map *pv2dm2, struct proc_v2drive_map *pv2dm1)
 {
 	pde_t *d;
 	pte_t *pte;
 	uint pa, i, flags;
 	char *mem;
+	struct v2drive_map *v2dm;
+
+	copy_proc_v2drive_map(pv2dm2, pv2dm1);
 
 	if((d = setupkvm()) == 0)
 		return 0;
 	for(i = 0; i < sz; i += PGSIZE){
+		mem = 0;
+		if((v2dm = get_v2drive_map(pv2dm2, i)) == 0)
+			panic("copyuvm: address not mapped");
 		if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
 			panic("copyuvm: pte should exist");
 		if(!(*pte & PTE_P))
@@ -359,15 +369,25 @@ copyuvm(pde_t *pgdir, uint sz)
 		pa = PTE_ADDR(*pte);
 		flags = PTE_FLAGS(*pte);
 		/* TODO: do not allocate the space here, just create the mapping
-		 */
-		if((mem = kalloc()) == 0)
-			goto bad;
-		memmove(mem, (char*)P2V(pa), PGSIZE);
+		*/
+		if(flags & PTE_P) {
+			if((mem = kalloc()) == 0)
+				goto bad;
+			memmove(mem, (char*)P2V(pa), PGSIZE);
+		}
+		else {
+			if(is_swap_mapping(v2dm)) {
+				//allocswap
+				//read swap
+				//write swap
+			}
+		}
 		if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags | PTE_P) < 0) {
 			kfree(mem);
 			goto bad;
 		}
 	}
+
 	return d;
 
 bad:

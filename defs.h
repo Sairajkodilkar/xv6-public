@@ -125,6 +125,8 @@ void						map2file_vaddr(struct proc_v2drive_map *, uint, uint, uint );
 void						map2swap_vaddr(struct proc_v2drive_map *, uint);
 void						map2file_range(struct proc_v2drive_map *pv2dm, uint start, uint end, uint inum, uint offset);
 void						map2swap_range(struct proc_v2drive_map *pv2dm, uint start, uint end);
+void copy_proc_v2drive_map(struct proc_v2drive_map *pv2dm2, struct proc_v2drive_map *pv2dm1);
+struct v2drive_map *get_v2drive_map(struct proc_v2drive_map *, uint);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
@@ -186,7 +188,7 @@ void            freevm2(pde_t*, struct proc_v2drive_map *);
 void            freevm(pde_t*);
 void            inituvm(pde_t*, char*, uint);
 int             loaduvm(pde_t*, char*, struct inode*, uint, uint);
-pde_t*          copyuvm(pde_t*, uint);
+pde_t*          copyuvm(pde_t*, uint, struct proc_v2drive_map *, struct proc_v2drive_map *);
 void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);

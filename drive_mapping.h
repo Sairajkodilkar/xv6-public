@@ -32,4 +32,10 @@ void map2file(struct v2drive_map *vdm, uint inum, uint offset);
 
 void map2swap(struct v2drive_map *vdm, uint block_num[BPP]);
 
+uint get_virtual_addr(struct v2drive_map *vdm);
+
+char is_file_mapping(struct v2drive_map *vdm);
+
+char is_swap_mapping(struct v2drive_map *vdm);
+
 #endif

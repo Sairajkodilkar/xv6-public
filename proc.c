@@ -193,7 +193,7 @@ fork(void)
   }
 
   // Copy process state from proc.
-  if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
+  if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz, &(np->pv2dm), &(curproc->pv2dm))) == 0){
     kfree(np->kstack);
     np->kstack = 0;
     np->state = UNUSED;
@@ -550,6 +550,13 @@ int update_proc_v2drive_map(struct proc_v2drive_map *pv2dm, uint vaddr_start, ui
 	return vaddr_end;
 }
 
+void copy_proc_v2drive_map(struct proc_v2drive_map *pv2dm2, struct proc_v2drive_map *pv2dm1) {
+	pv2dm2->size = pv2dm1->size;
+	for(uint i = 0; i < pv2dm1->size; i++) {
+			pv2dm2[i] = pv2dm1[i];
+	}
+}
+
 void map2file_vaddr(struct proc_v2drive_map *pv2dm, uint vaddr, uint inum, uint offset) {
 	for(uint i = 0; i < pv2dm->size; i++) {
 		if(pv2dm->v2dm[i].vaddr == vaddr) {
@@ -571,4 +578,13 @@ void map2swap_vaddr(struct proc_v2drive_map *pv2dm, uint vaddr) {
 			return;
 		}
 	}
+}
+
+struct v2drive_map *get_v2drive_map(struct proc_v2drive_map *pv2dm, uint vaddr){
+	for(uint i = 0; i < pv2dm->size; i++) {
+		if(get_virtual_addr(&(pv2dm->v2dm[i])) == vaddr) {
+			return &(pv2dm->v2dm[i]);
+		}
+	}
+	return (void *)0;
 }
