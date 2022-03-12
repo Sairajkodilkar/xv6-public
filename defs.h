@@ -193,9 +193,10 @@ void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
+int				mappages(pde_t *, void *, uint , uint , int);
 
 //page_fault.c
-void page_fault_intr(void);
+void			page_fault_intr(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

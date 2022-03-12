@@ -9,6 +9,9 @@
 #include "drive_mapping.h"
 #include "file.h"
 
+/* Sairaj:
+ *	TODO: Load the program section wise
+ */
 int
 exec(char *path, char **argv)
 {
@@ -55,9 +58,17 @@ exec(char *path, char **argv)
 		if(ph.vaddr + ph.memsz < ph.vaddr)
 			goto bad;
 		if(ph.flags | ELF_PROG_FLAG_WRITE) {
-			flags |= PTE_W | PTE_P;
+			cprintf("flag assignment\n");
+			flags |= PTE_W;
 		}
-		if((sz = allocuvm(pgdir, &(curproc->pv2dm), sz, ph.vaddr + ph.memsz, flags | PTE_P)) == 0)
+		else {
+			cprintf("no PTE_W\n");
+		}
+		if(!(flags | PTE_P)) {
+			cprintf("page fault vir addr %p to %p\n", ph.vaddr, ph.vaddr + ph.memsz);
+		}
+		cprintf("flag status: %d\n", flags | PTE_P);
+		if((sz = allocuvm(pgdir, &(curproc->pv2dm), sz, ph.vaddr + ph.memsz, flags)) == 0)
 			goto bad;
 
 		update_proc_v2drive_map(&(curproc->pv2dm), oldsz, ph.vaddr + ph.memsz);
@@ -65,8 +76,6 @@ exec(char *path, char **argv)
 		map2file_range(&(curproc->pv2dm), oldsz, ph.vaddr + ph.memsz, ip->inum, ph.off);
 
 		if(ph.vaddr % PGSIZE != 0)
-			goto bad;
-		if(loaduvm(pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
 			goto bad;
 	}
 	iunlockput(ip);

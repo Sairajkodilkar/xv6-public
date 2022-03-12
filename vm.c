@@ -32,7 +32,7 @@ seginit(void)
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
-	static pte_t *
+pte_t *
 walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
 	pde_t *pde;
@@ -57,7 +57,7 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
-	static int
+int
 mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 {
 	char *a, *last;
@@ -77,6 +77,13 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 		pa += PGSIZE;
 	}
 	return 0;
+}
+
+uint getpgflags(pde_t *pgdir, void *va) {
+	pte_t *pte;
+	va = PGROUNDDOWN((uint)va);
+	pte = walkpgdir(pgdir, va, 0);
+	return PTE_FLAGS(*pte);
 }
 
 // There is one page table per process, plus one that's used when
@@ -115,6 +122,9 @@ static struct kmap {
 } kmap[] = {
 	{ (void*)KERNBASE, 0,             EXTMEM,    PTE_W | PTE_P}, // I/O space
 	{ (void*)KERNLINK, V2P(KERNLINK), V2P(data), PTE_P},     // kern text+rodata
+	/* TODO: remove PTE_P flag and dynamically change that flag after actual
+	 * allocaton
+	 */
 	{ (void*)data,     V2P(data),     PHYSTOP,   PTE_W | PTE_P}, // kern data+memory
 	{ (void*)DEVSPACE, DEVSPACE,      0,         PTE_W | PTE_P}, // more devices
 };
