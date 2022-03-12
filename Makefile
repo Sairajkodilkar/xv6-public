@@ -28,6 +28,7 @@ OBJS = \
 	vectors.o\
 	vm.o\
 	drive_mapping.o\
+	page_fault.o\
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf

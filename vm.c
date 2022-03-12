@@ -366,10 +366,10 @@ copyuvm(pde_t *pgdir, uint sz, struct proc_v2drive_map *pv2dm2, struct proc_v2dr
 			panic("copyuvm: pte should exist");
 		if(!(*pte & PTE_P))
 			panic("copyuvm: page not present please add the support for demand paging");
+
 		pa = PTE_ADDR(*pte);
 		flags = PTE_FLAGS(*pte);
-		/* TODO: do not allocate the space here, just create the mapping
-		*/
+
 		if(flags & PTE_P) {
 			if((mem = kalloc()) == 0)
 				goto bad;
@@ -380,6 +380,7 @@ copyuvm(pde_t *pgdir, uint sz, struct proc_v2drive_map *pv2dm2, struct proc_v2dr
 				//allocswap
 				//read swap
 				//write swap
+				//map swap
 			}
 		}
 		if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags | PTE_P) < 0) {
@@ -413,6 +414,7 @@ uva2ka(pde_t *pgdir, char *uva)
 // Copy len bytes from p to user address va in page table pgdir.
 // Most useful when pgdir is not the current page table.
 // uva2ka ensures this only works for PTE_U pages.
+
 /* Demand paging:
  *	copyout assumes that the va is already in memory
  *	User must check to see if p and va both are present in memory

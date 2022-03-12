@@ -20,6 +20,7 @@ exec(char *path, char **argv)
 	struct proghdr ph;
 	pde_t *pgdir, *oldpgdir;
 	struct proc *curproc = myproc();
+	uint flags;
 
 	begin_op();
 
@@ -44,6 +45,7 @@ exec(char *path, char **argv)
 	sz = 0;
 	for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
 		oldsz = sz;
+		flags = PTE_U;
 		if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))
 			goto bad;
 		if(ph.type != ELF_PROG_LOAD)
@@ -52,7 +54,10 @@ exec(char *path, char **argv)
 			goto bad;
 		if(ph.vaddr + ph.memsz < ph.vaddr)
 			goto bad;
-		if((sz = allocuvm(pgdir, &(curproc->pv2dm), sz, ph.vaddr + ph.memsz, PTE_W | PTE_U | PTE_P)) == 0)
+		if(ph.flags | ELF_PROG_FLAG_WRITE) {
+			flags |= PTE_W | PTE_P;
+		}
+		if((sz = allocuvm(pgdir, &(curproc->pv2dm), sz, ph.vaddr + ph.memsz, flags | PTE_P)) == 0)
 			goto bad;
 
 		update_proc_v2drive_map(&(curproc->pv2dm), oldsz, ph.vaddr + ph.memsz);
