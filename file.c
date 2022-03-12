@@ -21,7 +21,6 @@ struct slab_run {
 
 struct {
   struct spinlock lock;
-  struct file file[NFILE];
   struct slab_run *slab;
 } ftable;
 
@@ -60,12 +59,6 @@ filealloc(void)
   struct file *f;
 
   acquire(&ftable.lock);
-  for(f = ftable.file; f < ftable.file + NFILE; f++){
-    if(f->ref == 0){
-      f->ref = 1;
-	  break;
-    }
-  }
 
   if(ftable.slab == 0) {
 	  slab_alloc(&ftable.slab);
