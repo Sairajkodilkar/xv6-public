@@ -47,7 +47,7 @@ exec(char *path, char **argv)
 	sz = 0;
 	for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
 		oldsz = sz;
-		flags = PTE_U;
+		flags = PTE_U | PTE_P;
 		if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))
 			goto bad;
 		if(ph.type != ELF_PROG_LOAD)
@@ -64,6 +64,11 @@ exec(char *path, char **argv)
 		update_proc_v2drive_map(&(curproc->pv2dm), oldsz, ph.vaddr + ph.memsz);
 
 		map2file_range(&(curproc->pv2dm), oldsz, ph.vaddr + ph.memsz, ip->inum, ph.off);
+
+		if(flags | PTE_P) {
+			if(loaduvm(pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
+				goto bad;
+		}
 
 		if(ph.vaddr % PGSIZE != 0)
 			goto bad;
