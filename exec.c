@@ -29,7 +29,6 @@ exec(char *path, char **argv)
 
 	if((ip = namei(path)) == 0){
 		end_op();
-		cprintf("exec: fail\n");
 		return -1;
 	}
 	ilock(ip);
@@ -57,17 +56,8 @@ exec(char *path, char **argv)
 			goto bad;
 		if(ph.vaddr + ph.memsz < ph.vaddr)
 			goto bad;
-		if(ph.flags | ELF_PROG_FLAG_WRITE) {
-			cprintf("flag assignment\n");
+		if(ph.flags | ELF_PROG_FLAG_WRITE)
 			flags |= PTE_W;
-		}
-		else {
-			cprintf("no PTE_W\n");
-		}
-		if(!(flags | PTE_P)) {
-			cprintf("page fault vir addr %p to %p\n", ph.vaddr, ph.vaddr + ph.memsz);
-		}
-		cprintf("flag status: %d\n", flags | PTE_P);
 		if((sz = allocuvm(pgdir, &(curproc->pv2dm), sz, ph.vaddr + ph.memsz, flags)) == 0)
 			goto bad;
 

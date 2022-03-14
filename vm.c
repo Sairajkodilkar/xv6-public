@@ -81,7 +81,7 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 
 uint getpgflags(pde_t *pgdir, void *va) {
 	pte_t *pte;
-	va = PGROUNDDOWN((uint)va);
+	va = (void *)PGROUNDDOWN((uint)va);
 	pte = walkpgdir(pgdir, va, 0);
 	return PTE_FLAGS(*pte);
 }
