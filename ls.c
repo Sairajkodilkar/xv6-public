@@ -9,6 +9,7 @@ fmtname(char *path)
   static char buf[DIRSIZ+1];
   char *p;
 
+  memset(buf, 0, DIRSIZ + 1);
   // Find first character after last slash.
   for(p=path+strlen(path); p >= path && *p != '/'; p--)
     ;
@@ -18,6 +19,7 @@ fmtname(char *path)
   if(strlen(p) >= DIRSIZ)
     return p;
   memmove(buf, p, strlen(p));
+  buf[strlen(p)] = 0;
   memset(buf+strlen(p), ' ', DIRSIZ-strlen(p));
   return buf;
 }
@@ -43,7 +45,9 @@ ls(char *path)
 
   switch(st.type){
   case T_FILE:
-    printf(1, "%s %d %d %d\n", fmtname(path), st.type, st.ino, st.size);
+	  printf(1, "PATH %s\n", path);
+	  char *x = fmtname(path);
+    printf(1, "FILE: %s %d %d %d\n", fmtname(path), st.type, st.ino, st.size);
     break;
 
   case T_DIR:
@@ -63,10 +67,14 @@ ls(char *path)
         printf(1, "ls: cannot stat %s\n", buf);
         continue;
       }
+	  /*
+	  printf(1, "fmtname: %s\n", fmtname(buf));
+	  */
       printf(1, "%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
     }
     break;
   }
+	while(1);
   close(fd);
 }
 
@@ -76,10 +84,12 @@ main(int argc, char *argv[])
   int i;
 
   if(argc < 2){
+	  printf(1, "ls runinng\n");
     ls(".");
     exit();
   }
-  for(i=1; i<argc; i++)
+  for(i=1; i<argc; i++) {
     ls(argv[i]);
+  }
   exit();
 }

@@ -181,6 +181,7 @@ panic(char *s)
 int
 fork1(void)
 {
+	return 0;
   int pid;
 
   pid = fork();

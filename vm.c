@@ -231,6 +231,7 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 			n = sz - i;
 		else
 			n = PGSIZE;
+		//cprintf("loaduvm %d with offset %d at address %p\n", i, offset + i, addr + i);
 		if(readi(ip, P2V(pa), offset+i, n) != n)
 			return -1;
 	}
@@ -254,7 +255,7 @@ allocuvm(pde_t *pgdir, struct proc_v2drive_map *pv2dm, uint oldsz, uint newsz, u
 
 	a = PGROUNDUP(oldsz);
 	for(; a < newsz; a += PGSIZE){
-		if(flags | PTE_P) {
+		if(flags & PTE_P) {
 			mem = kalloc();
 			if(mem == 0){
 				cprintf("allocuvm out of memory\n");
@@ -455,6 +456,7 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 void map2file_range(struct proc_v2drive_map *pv2dm, uint start, uint end, uint inum, uint offset) {
 	uint a = PGROUNDUP(start);
 	for(; a < end; a += PGSIZE, offset += PGSIZE) {
+		//cprintf("%p mapped to %d and inum %d\n", a, offset, inum);
 		map2file_vaddr(pv2dm, a, inum, offset);
 	}
 	return;

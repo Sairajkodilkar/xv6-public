@@ -221,6 +221,8 @@ fork(void)
 
   release(&ptable.lock);
 
+  //cprintf("fork completed\n");
+
   return pid;
 }
 
@@ -587,4 +589,11 @@ struct v2drive_map *get_v2drive_map(struct proc_v2drive_map *pv2dm, uint vaddr){
 		}
 	}
 	return (void *)0;
+}
+
+void print_v2drive_map(struct proc_v2drive_map *pv2dm) {
+	for(uint i = 0; i < pv2dm->size; i++) {
+		cprintf("%p\t", pv2dm->v2dm[i].vaddr);
+	}
+	cprintf("\n");
 }
