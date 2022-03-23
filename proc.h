@@ -37,6 +37,11 @@ struct context {
   uint eip;
 };
 
+struct proc_disk_mapping {
+  struct disk_mapping proc_mapping[VPP];
+  uint size;
+};
+
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
@@ -54,7 +59,7 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
-  struct disk_mapping proc_mapping[VPP];
+  struct proc_disk_mapping pdm;
 };
 
 // Process memory is laid out contiguously, low addresses first:

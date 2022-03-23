@@ -532,3 +532,21 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+
+/* Map the virtual addres from the range oldsz to newsz to the offset in the
+ * file 
+ */
+void proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz, uint newsz, uint offset, enum MapType type){
+
+	uint a = PGROUNDUP(oldsz);
+
+	for(; a < newsz; a += PGSIZE, offset += PGSIZE) {
+		if(pdm->size == VPP) {
+			panic("Too many addresses\n");
+		}
+		//map_to_disk(pdm->proc_mapping[pdm->size], a, offset);
+		pdm->size++;
+	}
+
+}

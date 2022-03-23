@@ -59,10 +59,11 @@ exec(char *path, char **argv)
 	if(readonly_sec){
 		flags &= ~PTE_P;
 	}
+
+	proc_map_to_disk(&(curproc->pdm), sz, ph.vaddr + ph.memsz, ph.off, 0);
+	
 	if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz, flags)) == 0)
 		goto bad;
-
-	//proc_map_to_file(sz, ph.vaddr + ph.memsz, ph.off);
 
 	if(ph.vaddr % PGSIZE != 0)
 		goto bad;

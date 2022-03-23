@@ -10,6 +10,8 @@ struct sleeplock;
 struct stat;
 struct superblock;
 struct disk_mapping;
+struct proc_disk_mapping;
+enum MapType;
 
 // bio.c
 void            binit(void);
@@ -121,6 +123,7 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+void			proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz, uint newsz, uint offset, enum MapType type);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
