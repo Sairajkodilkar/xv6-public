@@ -14,6 +14,7 @@
 #include "param.h"
 #include "stat.h"
 #include "mmu.h"
+#include "disk_mapping.h"
 #include "proc.h"
 #include "spinlock.h"
 #include "sleeplock.h"
