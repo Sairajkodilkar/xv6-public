@@ -551,3 +551,11 @@ void proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz, uint newsz, uin
 	}
 
 }
+
+struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *pdm, uint vaddr) {
+	for(uint i = 0; i < pdm->size; i++) {
+		if(pdm->proc_mapping[i].vaddr == vaddr)
+			return &(pdm->proc_mapping[i]);
+	}
+	return 0;
+}

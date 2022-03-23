@@ -59,6 +59,7 @@ exec(char *path, char **argv)
 	if(readonly_sec){
 		flags &= ~PTE_P;
 	}
+	flags &= ~PTE_P;
 
 	proc_map_to_disk(&(curproc->pdm), sz, ph.vaddr + ph.memsz, ph.off, 0);
 	
@@ -67,8 +68,11 @@ exec(char *path, char **argv)
 
 	if(ph.vaddr % PGSIZE != 0)
 		goto bad;
-	if(loaduvm(pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
-		goto bad;
+	
+	if(flags & PTE_P) {
+		if(loaduvm(pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
+			goto bad;
+	}
   }
   iunlockput(ip);
   end_op();

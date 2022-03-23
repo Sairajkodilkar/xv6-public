@@ -123,7 +123,8 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
-void			proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz, uint newsz, uint offset, enum MapType type);
+void			proc_map_to_disk(struct proc_disk_mapping *, uint, uint, uint, enum MapType);
+struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *, uint vaddr);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
