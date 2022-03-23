@@ -7,5 +7,6 @@ struct disk_mapping {
 	enum MapType type;
 	uint offset;
 };
+void map_to_disk(struct disk_mapping *dm, uint vaddr, uint offset, enum MapType type);
 
 #endif

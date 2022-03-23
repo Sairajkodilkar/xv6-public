@@ -194,5 +194,8 @@ void            clearpteu(pde_t *pgdir, char *uva);
 void map_to_file(uint oldsz, uint newsz, uint file_offset);
 void map_to_swap(uint oldsz, uint newsz, uint swap_offset);
 
+//page_fault.c
+void page_fault_intr(void);
+
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
