@@ -40,7 +40,10 @@ exec(char *path, char **argv)
   if((pgdir = setupkvm()) == 0)
     goto bad;
 
+  curproc->pdm.size = 0;
+
   // Load program into memory.
+	struct proc_disk_mapping *pdm = &(curproc->pdm);
   sz = 0;
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
 	  flags = PTE_U | PTE_P | PTE_W;
@@ -59,7 +62,6 @@ exec(char *path, char **argv)
 	if(readonly_sec){
 		flags &= ~PTE_P;
 	}
-	flags &= ~PTE_P;
 
 	proc_map_to_disk(&(curproc->pdm), sz, ph.vaddr + ph.memsz, ph.off, 0);
 	
@@ -70,10 +72,22 @@ exec(char *path, char **argv)
 		goto bad;
 	
 	if(flags & PTE_P) {
-		if(loaduvm(pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
+		if(loaduvm(&(curproc->pdm), pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
 			goto bad;
 	}
   }
+
+
+  cprintf("PA %x\n", pgdir);
+  /*
+  for(int i = 0; i < pdm->size; i++) {
+	  uint vaddr = pdm->proc_mapping[i].vaddr;
+	  pte_t *pte = walkpgdir(pgdir, vaddr, 0);
+	  loaduvm(&(curproc->pdm), pgdir, (char *)vaddr, ip, pdm->proc_mapping[i].offset, pdm->proc_mapping[i].size);
+	  cprintf("vaddr: %x and pa: %x\n", vaddr, PTE_ADDR(*pte));
+  }
+  */
+
   iunlockput(ip);
   end_op();
   ip = 0;

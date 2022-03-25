@@ -195,10 +195,12 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 // Load a program segment into pgdir.  addr must be page-aligned
 // and the pages from addr to addr+sz must already be mapped.
 int
-loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
+loaduvm(struct proc_disk_mapping *pdm, pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 {
   uint i, pa, n;
   pte_t *pte;
+
+  cprintf("LOAD UVM %x\n", pgdir);
 
   if((uint) addr % PGSIZE != 0)
     panic("loaduvm: addr must be page aligned");
@@ -210,8 +212,16 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
       n = sz - i;
     else
       n = PGSIZE;
+	struct disk_mapping *dm = find_disk_mapping(pdm, addr + i);
+	if(dm == 0) {
+		panic("Mapping not found\n");
+	}
+	dm->offset = offset + i;
+	dm->size = n;
     if(readi(ip, P2V(pa), offset+i, n) != n)
       return -1;
+	//cprintf("vaddr: %x and addr + i %x and pa is %x\n", dm->vaddr, addr + i, pa);
+	*pte &= ~PTE_P;
   }
   return 0;
 }
@@ -300,7 +310,7 @@ freevm(pde_t *pgdir)
 	kfree((char*)pgdir);
 }
 
-static pte_t *getpte(pde_t *pgdir, char *va) {
+pte_t *getpte(pde_t *pgdir, char *va) {
 
 	pde_t *pde;
 	pte_t *pgtab;
@@ -333,6 +343,8 @@ setptep(pde_t *pgdir, char *uva, uint alloc)
 
 
 	pte = getpte(pgdir, uva);
+	*pte |= *pte | PTE_P;
+	return;
 
 	if(pte == 0)
 		panic("setptep");
@@ -363,8 +375,6 @@ copyuvm(pde_t *pgdir, uint sz)
 	for(i = 0; i < sz; i += PGSIZE){
 		if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
 			panic("copyuvm: pte should exist");
-		if(!(*pte & PTE_P))
-			panic("copyuvm: page not present");
 		pa = PTE_ADDR(*pte);
 		flags = PTE_FLAGS(*pte);
 		if((mem = kalloc()) == 0)

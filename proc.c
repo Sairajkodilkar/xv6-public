@@ -189,6 +189,8 @@ fork(void)
     return -1;
   }
 
+  np->pdm = curproc->pdm;
+
   // Copy process state from proc.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
     kfree(np->kstack);
@@ -542,14 +544,12 @@ void proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz, uint newsz, uin
 	uint a = PGROUNDUP(oldsz);
 
 	for(; a < newsz; a += PGSIZE, offset += PGSIZE) {
-		cprintf("mapping address %x\n", a);
 		if(pdm->size == VPP) {
 			panic("Too many addresses\n");
 		}
 		map_to_disk(&(pdm->proc_mapping[pdm->size]), a, offset, type);
 		pdm->size++;
 	}
-
 }
 
 struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *pdm, uint vaddr) {
