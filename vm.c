@@ -32,7 +32,7 @@ seginit(void)
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
-static pte_t *
+pte_t *
 walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
@@ -300,6 +300,17 @@ freevm(pde_t *pgdir)
 	kfree((char*)pgdir);
 }
 
+static pte_t *getpte(pde_t *pgdir, char *va) {
+
+	pde_t *pde;
+	pte_t *pgtab;
+
+	pde = &pgdir[PDX(va)];
+	pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+
+	return &pgtab[PTX(va)];
+}
+
 // Clear PTE_U on a page. Used to create an inaccessible
 // page beneath the user stack.
 	void
@@ -311,6 +322,30 @@ clearpteu(pde_t *pgdir, char *uva)
 	if(pte == 0)
 		panic("clearpteu");
 	*pte &= ~PTE_U;
+}
+
+void
+setptep(pde_t *pgdir, char *uva, uint alloc)
+{
+	pte_t *pte;
+	char *kva;
+	uint pa, flags;
+
+
+	pte = getpte(pgdir, uva);
+
+	if(pte == 0)
+		panic("setptep");
+
+	flags = PTE_FLAGS(*pte);
+	pa = 0;
+
+	if(alloc) {
+		kva = kalloc();
+		pa = V2P(kva);
+	}
+	*pte = pa | flags | PTE_P;
+	cprintf("%x %x\n", pa, *pte);
 }
 
 // Given a parent process's page table, create a copy

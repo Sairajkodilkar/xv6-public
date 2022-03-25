@@ -8,9 +8,10 @@
 #include "spinlock.h"
 
 
+
 void page_fault_intr() {
 
-	uint pgflt_vaddr, kvaddr;
+	uint pgflt_vaddr;
 	struct proc *curproc;
 	struct disk_mapping *dm;
 	struct inode *ip;
@@ -18,9 +19,18 @@ void page_fault_intr() {
 	pgflt_vaddr = rcr2();
 	curproc = myproc();
 
-	dm = find_disk_mapping(&(curproc->pdm), pgflt_vaddr);
+	if((dm = find_disk_mapping(&(curproc->pdm), PGROUNDDOWN(pgflt_vaddr))) == 0) {
+		panic("mapping not found\n");
+	}
 
-	kvaddr = (uint) uva2ka(curproc->pgdir, (char *)dm->vaddr);
+	cprintf("%d\n", pgflt_vaddr);
+	setptep(curproc->pgdir, dm->vaddr, 1);
+
+	pte_t *pte = walkpgdir(curproc->pgdir, (void *)pgflt_vaddr, 0);
+	cprintf("PTE ADDR %x\n", PTE_ADDR(*pte));
+	if(pte == 0)
+		panic("WTF\n");
+	panic("NORMAL\n");
 
 	/*
 	begin_op();
