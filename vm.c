@@ -199,8 +199,7 @@ loaduvm(struct proc_disk_mapping *pdm, pde_t *pgdir, char *addr, struct inode *i
 {
   uint i, pa, n;
   pte_t *pte;
-
-  cprintf("LOAD UVM %x\n", pgdir);
+  struct disk_mapping *dm;
 
   if((uint) addr % PGSIZE != 0)
     panic("loaduvm: addr must be page aligned");
@@ -212,15 +211,11 @@ loaduvm(struct proc_disk_mapping *pdm, pde_t *pgdir, char *addr, struct inode *i
       n = sz - i;
     else
       n = PGSIZE;
-	struct disk_mapping *dm = find_disk_mapping(pdm, addr + i);
-	if(dm == 0) {
+	if((dm = find_disk_mapping(pdm, addr + i)) == 0) {
 		panic("Mapping not found\n");
 	}
 	dm->offset = offset + i;
 	dm->size = n;
-    if(readi(ip, P2V(pa), offset+i, n) != n)
-      return -1;
-	//cprintf("vaddr: %x and addr + i %x and pa is %x\n", dm->vaddr, addr + i, pa);
 	*pte &= ~PTE_P;
   }
   return 0;

@@ -71,22 +71,11 @@ exec(char *path, char **argv)
 	if(ph.vaddr % PGSIZE != 0)
 		goto bad;
 	
-	if(flags & PTE_P) {
-		if(loaduvm(&(curproc->pdm), pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
-			goto bad;
-	}
+	if(loaduvm(&(curproc->pdm), pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
+		goto bad;
   }
 
 
-  cprintf("PA %x\n", pgdir);
-  /*
-  for(int i = 0; i < pdm->size; i++) {
-	  uint vaddr = pdm->proc_mapping[i].vaddr;
-	  pte_t *pte = walkpgdir(pgdir, vaddr, 0);
-	  loaduvm(&(curproc->pdm), pgdir, (char *)vaddr, ip, pdm->proc_mapping[i].offset, pdm->proc_mapping[i].size);
-	  cprintf("vaddr: %x and pa: %x\n", vaddr, PTE_ADDR(*pte));
-  }
-  */
 
   iunlockput(ip);
   end_op();
