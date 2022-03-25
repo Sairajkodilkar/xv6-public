@@ -11,7 +11,8 @@
 
 void page_fault_intr() {
 
-	uint pgflt_vaddr, pa;
+	uint pgflt_vaddr, pa, kva, flags;
+	pte_t *pte;
 	struct proc *curproc;
 	struct disk_mapping *dm;
 	struct inode *ip;
@@ -22,18 +23,30 @@ void page_fault_intr() {
 
 	setptep(curproc->pgdir, pgflt_vaddr, 0);
 
+
 	dm = find_disk_mapping(&(curproc->pdm), PGROUNDDOWN(pgflt_vaddr));
 	if(dm < 0)
 		panic("Mapping not found\n");
 
+	pte = getpte(curproc->pgdir, dm->vaddr, 0);
+	kfree(P2V(PTE_ADDR(*pte)));
+
+	uint mem = 0;
+	mem = kalloc();
+	if(mem == 0) {
+		panic("out of memory\n");
+	}
+	memset(mem, 0, PGSIZE);
+	
+	*pte = 0;
+	*pte = V2P(mem) | PTE_P | PTE_U | PTE_W;
 
 	begin_op();
 	ip = namei(curproc->name);
 	ilock(ip);
 
-	pte_t *pte = getpte(curproc->pgdir, dm->vaddr, 0);
 	//loaduvm(&(curproc->pdm), curproc->pgdir, (char *)dm->vaddr, ip, dm->offset, dm->size);
-	readi(ip, dm->vaddr, dm->offset, dm->size);
+	readi(ip, mem, dm->offset, dm->size);
 
 	iunlockput(ip);
 	end_op();
