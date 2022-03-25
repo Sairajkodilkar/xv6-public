@@ -163,6 +163,7 @@ growproc(int n)
 
   sz = curproc->sz;
   if(n > 0){
+	  cprintf("growproc\n");
     if((sz = allocuvm(curproc->pgdir, sz, sz + n, PTE_P|PTE_U|PTE_W)) == 0)
       return -1;
   } else if(n < 0){

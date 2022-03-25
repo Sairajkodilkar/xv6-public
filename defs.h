@@ -1,3 +1,4 @@
+#include "types.h"
 struct buf;
 struct context;
 struct file;
@@ -190,10 +191,12 @@ void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
+void			setptep(pde_t *, char *);
+pte_t*			getpte(pde_t *, char *);
 
 //disk_mapping.c
-void map_to_file(uint oldsz, uint newsz, uint file_offset);
-void map_to_swap(uint oldsz, uint newsz, uint swap_offset);
+void map_to_file(uint, uint, uint);
+void map_to_swap(uint, uint, uint);
 
 //page_fault.c
 void page_fault_intr(void);

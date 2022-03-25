@@ -197,7 +197,7 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 int
 loaduvm(struct proc_disk_mapping *pdm, pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 {
-  uint i, pa, n;
+  uint i, n;
   pte_t *pte;
   struct disk_mapping *dm;
 
@@ -206,12 +206,11 @@ loaduvm(struct proc_disk_mapping *pdm, pde_t *pgdir, char *addr, struct inode *i
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, addr+i, 0)) == 0)
       panic("loaduvm: address should exist");
-    pa = PTE_ADDR(*pte);
     if(sz - i < PGSIZE)
       n = sz - i;
     else
       n = PGSIZE;
-	if((dm = find_disk_mapping(pdm, addr + i)) == 0) {
+	if((dm = find_disk_mapping(pdm, (uint)(addr + i))) == 0) {
 		panic("Mapping not found\n");
 	}
 	dm->offset = offset + i;
@@ -238,6 +237,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz, uint flags)
   for(; a < newsz; a += PGSIZE){
 	  mem = 0;
 	  if(flags & PTE_P) {
+		  cprintf("allocating\n");
 		  mem = kalloc();
 		  if(mem == 0){
 			  cprintf("allocuvm out of memory\n");
@@ -330,29 +330,14 @@ clearpteu(pde_t *pgdir, char *uva)
 }
 
 void
-setptep(pde_t *pgdir, char *uva, uint alloc)
+setptep(pde_t *pgdir, char *uva)
 {
 	pte_t *pte;
-	char *kva;
-	uint pa, flags;
-
 
 	pte = getpte(pgdir, uva);
 	*pte |= *pte | PTE_P;
+
 	return;
-
-	if(pte == 0)
-		panic("setptep");
-
-	flags = PTE_FLAGS(*pte);
-	pa = 0;
-
-	if(alloc) {
-		kva = kalloc();
-		pa = V2P(kva);
-	}
-	*pte = pa | flags | PTE_P;
-	cprintf("%x %x\n", pa, *pte);
 }
 
 // Given a parent process's page table, create a copy

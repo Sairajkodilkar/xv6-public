@@ -11,7 +11,8 @@
 int
 exec(char *path, char **argv)
 {
-  char *s, *last, readonly_sec;
+	cprintf("exec running\n");
+  char *s, *last;
   int i, off;
   uint flags;
   uint argc, sz, sp, ustack[3+MAXARG+1];
@@ -56,30 +57,24 @@ exec(char *path, char **argv)
     if(ph.vaddr + ph.memsz < ph.vaddr)
       goto bad;
 
-	readonly_sec =	ph.flags & ELF_PROG_FLAG_READ && 
-					!(ph.flags & ELF_PROG_FLAG_WRITE);
+	flags &= ~PTE_P;
 
-	if(readonly_sec){
-		flags &= ~PTE_P;
-	}
-
-	proc_map_to_disk(&(curproc->pdm), sz, ph.vaddr + ph.memsz, ph.off, 0);
+	proc_map_to_disk(pdm, sz, ph.vaddr + ph.memsz, ph.off, 0);
 	
+	cprintf("flags: %x\n", flags & PTE_P);
 	if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz, flags)) == 0)
 		goto bad;
 
 	if(ph.vaddr % PGSIZE != 0)
 		goto bad;
 	
-	if(loaduvm(&(curproc->pdm), pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
+	if(loaduvm(pdm, pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
 		goto bad;
   }
-
-
-
   iunlockput(ip);
   end_op();
   ip = 0;
+  cprintf("completed reading\n");
 
   // Allocate two pages at the next page boundary.
   // Make the first inaccessible.  Use the second as the user stack.
