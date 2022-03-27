@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "swap.h"
 
 struct {
   struct spinlock lock;
@@ -159,14 +160,18 @@ int
 growproc(int n)
 {
   uint sz;
+  uint swap_block;
   struct proc *curproc = myproc();
 
   sz = curproc->sz;
   if(n > 0){
-	  cprintf("growproc\n");
+	swap_block = alloc_swap();
+	proc_map_to_disk(&(curproc->pdm), sz, sz + n, swap_block, SWAP_MAP, -1);
     if((sz = allocuvm(curproc->pgdir, sz, sz + n, PTE_P|PTE_U|PTE_W)) == 0)
       return -1;
+	/* alloc swap */
   } else if(n < 0){
+	free_proc_disk_mapping(&(curproc->pdm), sz, sz + n);
     if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;
   }
@@ -556,8 +561,19 @@ void proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz,
 
 struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *pdm, uint vaddr) {
 	for(uint i = 0; i < pdm->size; i++) {
-		if(pdm->proc_mapping[i].vaddr == vaddr)
+		if(get_dm_vaddr(&(pdm->proc_mapping[i])) == vaddr)
 			return &(pdm->proc_mapping[i]);
 	}
 	return 0;
+}
+
+void free_proc_disk_mapping(struct proc_disk_mapping *pdm, uint start, uint end) {
+	uint a = PGROUNDUP(start);
+	for(int i = 0; i < pdm->size; i++) {
+		if(get_dm_vaddr(&(pdm->proc_mapping[i])) == a) {
+			pdm->size = i + 1;
+			return;
+		}
+	}
+	return;
 }

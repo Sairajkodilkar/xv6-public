@@ -7,6 +7,7 @@
 #include "defs.h"
 #include "x86.h"
 #include "elf.h"
+#include "swap.h"
 
 int
 exec(char *path, char **argv)
@@ -16,6 +17,7 @@ exec(char *path, char **argv)
   uint flags;
   uint argc, sz, sp, ustack[3+MAXARG+1];
   uint inum;
+  uint swap_block_no;
   struct elfhdr elf;
   struct inode *ip;
   struct proghdr ph;
@@ -75,11 +77,16 @@ exec(char *path, char **argv)
   iunlockput(ip);
   end_op();
   ip = 0;
-  cprintf("completed reading\n");
 
   // Allocate two pages at the next page boundary.
   // Make the first inaccessible.  Use the second as the user stack.
   sz = PGROUNDUP(sz);
+
+  if((swap_block_no = alloc_swap()) < 0) {
+	  panic("swap: out of space");
+  }
+  proc_map_to_disk(pdm, sz, sz + 2*PGSIZE, swap_block_no, SWAP_MAP, -1);
+
   if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE, PTE_P|PTE_U|PTE_W)) == 0)
 	  goto bad;
 

@@ -213,8 +213,8 @@ loaduvm(struct proc_disk_mapping *pdm, pde_t *pgdir, char *addr, struct inode *i
 	if((dm = find_disk_mapping(pdm, (uint)(addr + i))) == 0) {
 		panic("Mapping not found\n");
 	}
-	dm->offset = offset + i;
-	dm->size = n;
+	set_dm_offset(dm, offset + i);
+	set_dm_size(dm, n);
 	*pte &= ~PTE_P;
   }
   return 0;
@@ -237,7 +237,6 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz, uint flags)
   for(; a < newsz; a += PGSIZE){
 	  mem = 0;
 	  if(flags & PTE_P) {
-		  cprintf("allocating\n");
 		  mem = kalloc();
 		  if(mem == 0){
 			  cprintf("allocuvm out of memory\n");
@@ -293,6 +292,7 @@ freevm(pde_t *pgdir)
 {
 	uint i;
 
+	/* TODO: free the allocated swap space */
 	if(pgdir == 0)
 		panic("freevm: no pgdir");
 	deallocuvm(pgdir, KERNBASE, 0);

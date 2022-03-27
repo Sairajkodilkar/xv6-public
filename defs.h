@@ -57,7 +57,7 @@ struct inode*   nameiparent(char*, char*);
 int             readi(struct inode*, char*, uint, uint);
 void            stati(struct inode*, struct stat*);
 int             writei(struct inode*, char*, uint, uint);
-
+struct inode*	iget(uint dev, uint inum);
 // ide.c
 void            ideinit(void);
 void            ideintr(void);
@@ -127,6 +127,7 @@ void            wakeup(void*);
 void            yield(void);
 void			proc_map_to_disk(struct proc_disk_mapping *, uint, uint, uint, enum MapType, uint);
 struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *, uint vaddr);
+void			free_proc_disk_mapping(struct proc_disk_mapping *, uint , uint );
 
 // swtch.S
 void            swtch(struct context**, struct context*);
