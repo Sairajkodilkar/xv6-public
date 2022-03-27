@@ -1,5 +1,6 @@
 #ifndef __DISK_MAPPING
 #define __DISK_MAPPING
+
 enum MapType {FILE_MAP, SWAP_MAP};
 
 struct disk_mapping {
@@ -7,7 +8,10 @@ struct disk_mapping {
 	enum MapType type;
 	uint offset;
 	uint size;
+	uint inum;
 };
-void map_to_disk(struct disk_mapping *dm, uint vaddr, uint offset, enum MapType type);
+
+void map_to_disk(struct disk_mapping *dm, uint vaddr, uint offset, 
+		enum MapType type, uint inum);
 
 #endif

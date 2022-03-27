@@ -7,6 +7,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define FILE_SYSTEM_DEV (1)
+
 void page_fault_intr() {
 
 	uint pgflt_vaddr;
@@ -18,7 +20,7 @@ void page_fault_intr() {
 
 	pgflt_vaddr = rcr2();
 	curproc = myproc();
-	cprintf("PGFLT address %x, prog %d\n", pgflt_vaddr, curproc->pid);
+	cprintf("PGFLT address %x, prog %d, prog name %s\n", pgflt_vaddr, curproc->pid, curproc->name);
 
 	setptep(curproc->pgdir, (char *)pgflt_vaddr);
 
@@ -39,7 +41,7 @@ void page_fault_intr() {
 
 	/* Read the ELF file */
 	begin_op();
-	ip = namei(curproc->name);
+	ip = iget(FILE_SYSTEM_DEV, dm->inum);
 	ilock(ip);
 	readi(ip, mem, dm->offset, dm->size);
 	iunlockput(ip);

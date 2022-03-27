@@ -59,7 +59,8 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
-  struct proc_disk_mapping pdm;
+  uint pages_in_memory;
+  struct proc_disk_mapping pdm;// process virtual memory mapping
 };
 
 // Process memory is laid out contiguously, low addresses first:

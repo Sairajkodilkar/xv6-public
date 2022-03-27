@@ -155,3 +155,14 @@ filewrite(struct file *f, char *addr, int n)
   panic("filewrite");
 }
 
+uint get_inum(struct inode *ip) {
+	if(!ip)
+		panic("Bad inode pointer");
+	return ip->inum;
+}
+
+uint get_dev(struct inode *ip) {
+	if(!ip)
+		panic("Bad inode pointer");
+	return ip->dev;
+}

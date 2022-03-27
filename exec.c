@@ -11,11 +11,11 @@
 int
 exec(char *path, char **argv)
 {
-	cprintf("exec running\n");
   char *s, *last;
   int i, off;
   uint flags;
   uint argc, sz, sp, ustack[3+MAXARG+1];
+  uint inum;
   struct elfhdr elf;
   struct inode *ip;
   struct proghdr ph;
@@ -38,6 +38,8 @@ exec(char *path, char **argv)
   if(elf.magic != ELF_MAGIC)
     goto bad;
 
+  inum = get_inum(ip);
+
   if((pgdir = setupkvm()) == 0)
     goto bad;
 
@@ -59,9 +61,8 @@ exec(char *path, char **argv)
 
 	flags &= ~PTE_P;
 
-	proc_map_to_disk(pdm, sz, ph.vaddr + ph.memsz, ph.off, 0);
+	proc_map_to_disk(pdm, sz, ph.vaddr + ph.memsz, ph.off, FILE_MAP, inum);
 	
-	cprintf("flags: %x\n", flags & PTE_P);
 	if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz, flags)) == 0)
 		goto bad;
 
