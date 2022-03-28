@@ -215,7 +215,6 @@ loaduvm(struct proc_disk_mapping *pdm, pde_t *pgdir, char *addr, struct inode *i
 	}
 	set_dm_offset(dm, offset + i);
 	set_dm_size(dm, n);
-	*pte &= ~PTE_P;
   }
   return 0;
 }
@@ -240,6 +239,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz, uint flags)
 		  mem = kalloc();
 		  if(mem == 0){
 			  cprintf("allocuvm out of memory\n");
+			  /* TODO: free the swap space allocated to it*/
 			  deallocuvm(pgdir, newsz, oldsz);
 			  return 0;
 		  }
@@ -353,21 +353,23 @@ copyuvm(pde_t *pgdir, uint sz)
 	if((d = setupkvm()) == 0)
 		return 0;
 	for(i = 0; i < sz; i += PGSIZE){
-		if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
-			panic("copyuvm: pte should exist");
+		pte = getpte(pgdir, (void *) i);
 		pa = PTE_ADDR(*pte);
 		flags = PTE_FLAGS(*pte);
-		if((mem = kalloc()) == 0)
-			goto bad;
-		memmove(mem, (char*)P2V(pa), PGSIZE);
-		if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags|PTE_P) < 0) {
-			kfree(mem);
-			goto bad;
+		if(flags & PTE_P) {
+			if((mem = kalloc()) == 0)
+				goto bad;
+			memmove(mem, (char*)P2V(pa), PGSIZE);
+			if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags|PTE_P) < 0) {
+				kfree(mem);
+				goto bad;
+			}
 		}
 	}
 	return d;
 
 bad:
+	/* TODO: free all the swap space associated with the program */
 	freevm(d);
 	return 0;
 }
@@ -390,6 +392,7 @@ uva2ka(pde_t *pgdir, char *uva)
 // Copy len bytes from p to user address va in page table pgdir.
 // Most useful when pgdir is not the current page table.
 // uva2ka ensures this only works for PTE_U pages.
+// Copyout assumes that the page is already allocated 
 	int
 copyout(pde_t *pgdir, uint va, void *p, uint len)
 {

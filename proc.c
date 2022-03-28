@@ -297,6 +297,7 @@ wait(void)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
+		/* TODO: clear all the swap space associated with the program */
         freevm(p->pgdir);
         p->pid = 0;
         p->parent = 0;
@@ -565,6 +566,12 @@ struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *pdm, uint vaddr
 			return &(pdm->proc_mapping[i]);
 	}
 	return 0;
+}
+
+void copy_pdm(struct proc_disk_mapping *dest, const struct proc_disk_mapping *src) {
+	/* TODO: copy the src disk mapping to the destination 
+	 *		while copying allocate the new swap space for that program
+	 */
 }
 
 void free_proc_disk_mapping(struct proc_disk_mapping *pdm, uint start, uint end) {

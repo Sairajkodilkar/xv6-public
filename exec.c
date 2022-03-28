@@ -45,6 +45,7 @@ exec(char *path, char **argv)
   if((pgdir = setupkvm()) == 0)
     goto bad;
 
+  /* TODO: free all the swap space associated with it */
   curproc->pdm.size = 0;
 
   // Load program into memory.
@@ -131,8 +132,10 @@ exec(char *path, char **argv)
   return 0;
 
 bad:
-  if(pgdir)
+  if(pgdir) {
+	  /* TODO: clear all the swap space associated with the program */
 	  freevm(pgdir);
+  }
   if(ip){
 	  iunlockput(ip);
 	  end_op();
