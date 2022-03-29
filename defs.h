@@ -12,7 +12,6 @@ struct stat;
 struct superblock;
 struct disk_mapping;
 struct proc_disk_mapping;
-enum MapType;
 
 // bio.c
 void            binit(void);
@@ -125,7 +124,7 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
-void			proc_map_to_disk(struct proc_disk_mapping *, uint, uint, uint, enum MapType, uint);
+void			proc_map_to_disk(struct proc_disk_mapping *, uint, uint, uint, uint, uint);
 struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *, uint vaddr);
 void			free_proc_disk_mapping(struct proc_disk_mapping *, uint , uint );
 

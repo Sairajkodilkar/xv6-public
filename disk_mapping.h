@@ -1,7 +1,15 @@
 #ifndef __DISK_MAPPING
 #define __DISK_MAPPING
 
-enum MapType {FILE_MAP, SWAP_MAP};
+#define FREE		(0)
+#define MAPPED		(1)
+#define SWAP_MAP	(MAPPED << 1)
+#define FILE_MAP	(SWAP_MAP << 1)
+#define IN_MEM		(FILE_MAP << 1)
+
+#define IS_FREE(dm)		(!(dm->flags))
+#define IS_MAPPED(dm)	(dm->flags & MAPPED)
+#define IS_FILE_MAP(dm) (dm->flags & FILE_MAP)
 
 struct file_map {
 	uint offset; /* offset in case of file system*/
@@ -15,7 +23,7 @@ struct swap_map {
 
 struct disk_mapping {
 	uint vaddr; /* page virtual address */
-	enum MapType type; /* map type */
+	uint flags; /* map flags */
 	union {
 		struct file_map fm;
 		struct swap_map sm;
@@ -23,7 +31,7 @@ struct disk_mapping {
 };
 
 void map_to_disk(struct disk_mapping *dm, uint vaddr, uint offset, 
-		enum MapType type, uint inum);
+		uint flags, uint inum);
 
 static inline uint
 get_dm_size(const struct disk_mapping *dm) {
@@ -46,8 +54,8 @@ get_dm_block_num(const struct disk_mapping *dm) {
 }
 
 static inline uint
-get_dm_type(const struct disk_mapping *dm) {
-	return dm->type;
+get_dm_flags(const struct disk_mapping *dm) {
+	return dm->flags;
 }
 
 static inline uint 
@@ -72,8 +80,8 @@ set_dm_inum(struct disk_mapping *dm, uint inum) {
 }
 
 static inline void 
-set_dm_type(struct disk_mapping *dm, enum MapType type) {
-	dm->type = type;
+set_dm_flags(struct disk_mapping *dm, uint flags) {
+	dm->flags = flags;
 }
 
 static inline void 

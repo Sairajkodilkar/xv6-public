@@ -547,22 +547,31 @@ procdump(void)
  * file 
  */
 void proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz, 
-		uint newsz, uint offset, enum MapType type, uint inum) {
+		uint newsz, uint offset, uint flags, uint inum) {
 
+	struct disk_mapping *dm;
+	uint i;
 	uint a = PGROUNDUP(oldsz);
 
-	for(; a < newsz; a += PGSIZE, offset += PGSIZE) {
+	for(i = 0; a < newsz; i++) {
 		if(pdm->size == VPP) {
 			panic("Too many addresses\n");
 		}
-		map_to_disk(&(pdm->proc_mapping[pdm->size]), a, offset, type, inum);
-		pdm->size++;
+		dm = &(pdm->proc_mapping[i]);
+		if(IS_FREE(dm)) {
+			map_to_disk(dm, a, offset, flags | MAPPED, inum);
+			a += PGSIZE;
+			offset += PGSIZE;
+			pdm->size++;
+		}
 	}
 }
 
 struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *pdm, uint vaddr) {
+	struct disk_mapping *dm;
 	for(uint i = 0; i < pdm->size; i++) {
-		if(get_dm_vaddr(&(pdm->proc_mapping[i])) == vaddr)
+		dm = &(pdm->proc_mapping[i]);
+		if(IS_MAPPED(dm) && get_dm_vaddr(dm) == vaddr)
 			return &(pdm->proc_mapping[i]);
 	}
 	return 0;
@@ -575,12 +584,26 @@ void copy_pdm(struct proc_disk_mapping *dest, const struct proc_disk_mapping *sr
 }
 
 void free_proc_disk_mapping(struct proc_disk_mapping *pdm, uint start, uint end) {
+	struct disk_mapping *dm;
+	uint vaddr;
 	uint a = PGROUNDUP(start);
-	for(int i = 0; i < pdm->size; i++) {
-		if(get_dm_vaddr(&(pdm->proc_mapping[i])) == a) {
-			pdm->size = i + 1;
+	for(int i = 0; i < VPP; i++) {
+		dm = &(pdm->proc_mapping[i]);
+		vaddr = get_dm_vaddr(dm);
+		if(IS_MAPPED(dm) && vaddr >= a && vaddr < end) {
+			set_dm_flags(dm, FREE);
+			pdm->size--;
 			return;
 		}
 	}
 	return;
+}
+
+void clear_proc_disk_mapping(struct proc_disk_mapping *pdm) {
+	struct disk_mapping *dm;
+	pdm->size = 0;
+	for(int i = 0; i < VPP; i++) {
+		dm = &(pdm->proc_mapping[i]);
+		set_dm_flags(dm, FREE);
+	}
 }

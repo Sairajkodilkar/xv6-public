@@ -2,12 +2,12 @@
 #include "disk_mapping.h"
 #include "defs.h"
 void map_to_disk(struct disk_mapping *dm, uint vaddr, 
-		uint offset, enum MapType type, uint inum){
+		uint offset, uint flags, uint inum){
 
 	dm->vaddr = vaddr;
-	dm->type = type;
+	dm->flags = flags;
 
-	if(type == FILE_MAP) {
+	if(IS_FILE_MAP(dm)) {
 		dm->map.fm.offset = offset;
 		dm->map.fm.inum = inum;
 	}

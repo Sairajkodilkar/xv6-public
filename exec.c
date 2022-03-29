@@ -46,7 +46,7 @@ exec(char *path, char **argv)
     goto bad;
 
   /* TODO: free all the swap space associated with it */
-  curproc->pdm.size = 0;
+  clear_proc_disk_mapping(&(curproc->pdm));
 
   // Load program into memory.
 	struct proc_disk_mapping *pdm = &(curproc->pdm);
