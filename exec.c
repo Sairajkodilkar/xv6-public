@@ -45,11 +45,11 @@ exec(char *path, char **argv)
   if((pgdir = setupkvm()) == 0)
     goto bad;
 
-  /* TODO: free all the swap space associated with it */
-  clear_proc_disk_mapping(&(curproc->pdm));
 
   // Load program into memory.
-	struct proc_disk_mapping *pdm = &(curproc->pdm);
+	struct proc_disk_mapping new_pdm;
+	init_proc_disk_mapping(&new_pdm);
+
   sz = 0;
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
 	  flags = PTE_U | PTE_P | PTE_W;
@@ -64,7 +64,7 @@ exec(char *path, char **argv)
 
 	flags &= ~PTE_P;
 
-	proc_map_to_disk(pdm, sz, ph.vaddr + ph.memsz, ph.off, FILE_MAP, inum);
+	proc_map_to_disk(&new_pdm, sz, ph.vaddr + ph.memsz, ph.off, FILE_MAP, inum);
 	
 	if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz, flags)) == 0)
 		goto bad;
@@ -72,7 +72,7 @@ exec(char *path, char **argv)
 	if(ph.vaddr % PGSIZE != 0)
 		goto bad;
 	
-	if(loaduvm(pdm, pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
+	if(loaduvm(&new_pdm, pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
 		goto bad;
   }
   iunlockput(ip);
@@ -86,12 +86,11 @@ exec(char *path, char **argv)
   if((swap_block_no = alloc_swap()) < 0) {
 	  panic("swap: out of space");
   }
-  proc_map_to_disk(pdm, sz, sz + 2*PGSIZE, swap_block_no, SWAP_MAP, -1);
+  proc_map_to_disk(&new_pdm, sz, sz + 2*PGSIZE, swap_block_no, SWAP_MAP, -1);
 
   if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE, PTE_P|PTE_U|PTE_W)) == 0)
 	  goto bad;
 
-  /* TODO: map to swap */
 
   clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
   sp = sz;
@@ -128,12 +127,15 @@ exec(char *path, char **argv)
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
   switchuvm(curproc);
+  clear_proc_disk_mapping(&(curproc->pdm));
+  curproc->pdm = new_pdm;
   freevm(oldpgdir);
   return 0;
 
 bad:
   if(pgdir) {
-	  /* TODO: clear all the swap space associated with the program */
+	  clear_proc_disk_mapping(&(curproc->pdm));
+	  clear_proc_disk_mapping(&new_pdm);
 	  freevm(pgdir);
   }
   if(ip){

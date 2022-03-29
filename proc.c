@@ -167,13 +167,16 @@ growproc(int n)
   if(n > 0){
 	swap_block = alloc_swap();
 	proc_map_to_disk(&(curproc->pdm), sz, sz + n, swap_block, SWAP_MAP, -1);
-    if((sz = allocuvm(curproc->pgdir, sz, sz + n, PTE_P|PTE_U|PTE_W)) == 0)
+    if((sz = allocuvm(curproc->pgdir, sz, sz + n, PTE_P|PTE_U|PTE_W)) == 0) {
+		clear_proc_disk_mapping(&(curproc->pdm));
       return -1;
-	/* alloc swap */
+	}
   } else if(n < 0){
 	free_proc_disk_mapping(&(curproc->pdm), sz, sz + n);
-    if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
+    if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0) {
+		clear_proc_disk_mapping(&(curproc->pdm));
       return -1;
+	}
   }
   curproc->sz = sz;
   switchuvm(curproc);
@@ -199,6 +202,7 @@ fork(void)
 
   // Copy process state from proc.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
+	  clear_proc_disk_mapping(&(curproc->pdm));
     kfree(np->kstack);
     np->kstack = 0;
     np->state = UNUSED;
@@ -297,7 +301,7 @@ wait(void)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-		/* TODO: clear all the swap space associated with the program */
+		clear_proc_disk_mapping(&(p->pdm));
         freevm(p->pgdir);
         p->pid = 0;
         p->parent = 0;
@@ -567,6 +571,15 @@ void proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz,
 	}
 }
 
+void init_proc_disk_mapping(struct proc_disk_mapping *pdm) {
+	struct disk_mapping *dm;
+	pdm->size = 0;
+	for(int i = 0; i < VPP; i++) {
+		dm = &(pdm->proc_mapping[i]);
+		set_dm_flags(dm, FREE);
+	}
+}
+
 struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *pdm, uint vaddr) {
 	struct disk_mapping *dm;
 	for(uint i = 0; i < pdm->size; i++) {
@@ -591,6 +604,7 @@ void free_proc_disk_mapping(struct proc_disk_mapping *pdm, uint start, uint end)
 		dm = &(pdm->proc_mapping[i]);
 		vaddr = get_dm_vaddr(dm);
 		if(IS_MAPPED(dm) && vaddr >= a && vaddr < end) {
+			/* TODO: perform swap release*/
 			set_dm_flags(dm, FREE);
 			pdm->size--;
 			return;
@@ -604,6 +618,7 @@ void clear_proc_disk_mapping(struct proc_disk_mapping *pdm) {
 	pdm->size = 0;
 	for(int i = 0; i < VPP; i++) {
 		dm = &(pdm->proc_mapping[i]);
+		/*TODO: if swap then release the swap */
 		set_dm_flags(dm, FREE);
 	}
 }

@@ -239,7 +239,6 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz, uint flags)
 		  mem = kalloc();
 		  if(mem == 0){
 			  cprintf("allocuvm out of memory\n");
-			  /* TODO: free the swap space allocated to it*/
 			  deallocuvm(pgdir, newsz, oldsz);
 			  return 0;
 		  }
@@ -369,7 +368,6 @@ copyuvm(pde_t *pgdir, uint sz)
 	return d;
 
 bad:
-	/* TODO: free all the swap space associated with the program */
 	freevm(d);
 	return 0;
 }
