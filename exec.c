@@ -120,6 +120,7 @@ exec(char *path, char **argv)
 		  last = s+1;
   safestrcpy(curproc->name, last, sizeof(curproc->name));
 
+  /*TODO swapout the page here */
   // Commit to the user image.
   oldpgdir = curproc->pgdir;
   curproc->pgdir = pgdir;

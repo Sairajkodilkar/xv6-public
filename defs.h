@@ -195,6 +195,7 @@ void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
 void			setptep(pde_t *, char *);
+void			clearptep(pde_t *, char *);
 pte_t*			getpte(pde_t *, char *);
 
 //disk_mapping.c

@@ -604,7 +604,9 @@ void free_proc_disk_mapping(struct proc_disk_mapping *pdm, uint start, uint end)
 		dm = &(pdm->proc_mapping[i]);
 		vaddr = get_dm_vaddr(dm);
 		if(IS_MAPPED(dm) && vaddr >= a && vaddr < end) {
-			/* TODO: perform swap release*/
+			if(IS_SWAP_MAP(dm)) {
+				dealloc_swap(get_dm_block_num(dm));
+			}
 			set_dm_flags(dm, FREE);
 			pdm->size--;
 			return;
@@ -619,6 +621,9 @@ void clear_proc_disk_mapping(struct proc_disk_mapping *pdm) {
 	for(int i = 0; i < VPP; i++) {
 		dm = &(pdm->proc_mapping[i]);
 		/*TODO: if swap then release the swap */
+		if(IS_SWAP_MAP(dm)) {
+			dealloc_swap(get_dm_block_num(dm));
+		}
 		set_dm_flags(dm, FREE);
 	}
 }

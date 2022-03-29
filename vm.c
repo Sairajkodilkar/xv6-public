@@ -339,6 +339,18 @@ setptep(pde_t *pgdir, char *uva)
 	return;
 }
 
+void
+clearptep(pde_t *pgdir, char *uva)
+{
+	pte_t *pte;
+	cprintf("clearing PTE\n");
+
+	pte = getpte(pgdir, uva);
+	*pte = *pte & ~PTE_P;
+
+	return;
+}
+
 // Given a parent process's page table, create a copy
 // of it for a child.
 	pde_t*

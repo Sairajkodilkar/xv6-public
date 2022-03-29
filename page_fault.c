@@ -48,6 +48,10 @@ void page_fault_intr() {
 		/* TODO: in future kill the program */
 		panic("Mapping not found\n");
 
+	if(IS_SWAP_MAP(dm)) {
+		panic("Swap yet to be implemented");
+	}
+
 	pte = getpte(curproc->pgdir, (char *)get_dm_vaddr(dm));
 
 	/* Allocate the memory */
