@@ -1,6 +1,8 @@
 #include "swap.h"
 #include "defs.h"
 #include "spinlock.h"
+#include "sleeplock.h"
+#include "buf.h"
 
 /* SWAP structure:
  *		first block is swap header
@@ -27,7 +29,7 @@ void init_swap() {
 uint alloc_swap(void) {
 
 	uint i, j;
-	uint block_no;
+	uint blockno;
 
 	/* TODO: get the lock for the swap_bit_map */
 
@@ -37,13 +39,13 @@ uint alloc_swap(void) {
 		if(swap.swap_bit_map[i] == ~1)
 			continue;
 		while(j < UCHAR_BITS) {
-			block_no = (i * UCHAR_BITS) + j;
-			if(block_no >= sw.size){ 
+			blockno = (i * UCHAR_BITS) + j;
+			if(blockno >= sw.size){ 
 				return 0;
 			}
 			if((swap.swap_bit_map[i] & (1<<j)) == 0) {
 				swap.swap_bit_map[i] |= (1<<j);
-				return block_no;
+				return blockno;
 			}
 			j++;
 		}
@@ -52,26 +54,56 @@ uint alloc_swap(void) {
 	return 0;
 }
 
-void dealloc_swap(uint swap_block_no) {
+void dealloc_swap(uint swap_blockno) {
 
 	/* TODO: aquire the lock */
 	uint index;
 	uint offset;
 
-	index = swap_block_no / UCHAR_BITS;
-	offset = swap_block_no % UCHAR_BITS;
+	index = swap_blockno / UCHAR_BITS;
+	offset = swap_blockno % UCHAR_BITS;
 
 	swap.swap_bit_map[index] &= ~(1<<offset);
 
 	return;
 }
 
-uint read_swap_block(char *buffer, uint swap_block) {
-	/* read the swap block into the buffer pointed by the buffer */
-	return 0;
+void init_swap_buf(struct buf *swap_buf, uchar *data, uint blockno, uint flags) {
+
+	swap_buf->flags = 0;
+	swap_buf->dev = SWAP_DEV;
+	swap_buf->blockno = blockno;
+	swap_buf->bsize = 512;
+	swap_buf->data = data;
+	swap_buf->refcnt = 1;
+
+	initsleeplock(&(swap_buf->lock), "buffer");
+
+	return;
 }
 
-uint write_swap_block(const char *buffer, uint block_no){
-	return 0;
+uint read_swap_block(char *data, uint blockno) {
+	/* read the swap block into the buffer pointed by the buffer */
+	struct buf swap_buf;
+
+	init_swap_buf(&swap_buf, data, blockno, 0);
+
+	acquiresleep(&(swap_buf.lock));
+	cprintf("SWAP: %d\n",  swap_buf.blockno);
+	iderw(&swap_buf);
+	cprintf("SWAP: %d\n",  swap_buf.blockno);
+
+	return SWAP_BLOCK_SIZE;
+}
+
+uint write_swap_block(const char *data, uint blockno){
+
+	struct buf swap_buf;
+
+	init_swap_buf(&swap_buf, data, blockno, B_DIRTY);
+
+	iderw(&swap_buf);
+
+	return SWAP_BLOCK_SIZE;
 }
 
