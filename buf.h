@@ -2,6 +2,7 @@ struct buf {
   int flags;
   uint dev;
   uint blockno;
+  uint bsize;
   struct sleeplock lock;
   uint refcnt;
   struct buf *prev; // LRU cache list

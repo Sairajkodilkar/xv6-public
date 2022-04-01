@@ -92,7 +92,7 @@ idestart(struct buf *b)
   else
 	  portno = 0x170;
 
-  int sector_per_block =  BSIZE/SECTOR_SIZE;
+  int sector_per_block =  (b->bsize)/SECTOR_SIZE;
   int sector = b->blockno * sector_per_block;
   int read_cmd = (sector_per_block == 1) ? IDE_CMD_READ :  IDE_CMD_RDMUL;
   int write_cmd = (sector_per_block == 1) ? IDE_CMD_WRITE : IDE_CMD_WRMUL;
@@ -193,7 +193,6 @@ iderw(struct buf *b)
 	while((b->flags & (B_VALID|B_DIRTY)) != B_VALID){
 		sleep(b, &idelock);
 	}
-
 
 	release(&idelock);
 }

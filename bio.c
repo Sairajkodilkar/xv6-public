@@ -53,6 +53,7 @@ binit(void)
     b->next = bcache.head.next;
     b->prev = &bcache.head;
 	b->data = buf_data[i];
+	b->bsize = BSIZE;
     initsleeplock(&b->lock, "buffer");
     bcache.head.next->prev = b;
     bcache.head.next = b;
