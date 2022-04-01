@@ -68,40 +68,14 @@ void dealloc_swap(uint swap_blockno) {
 	return;
 }
 
-void init_swap_buf(struct buf *swap_buf, uchar *data, uint blockno, uint flags) {
-
-	swap_buf->flags = 0;
-	swap_buf->dev = SWAP_DEV;
-	swap_buf->blockno = blockno;
-	swap_buf->bsize = 512;
-	swap_buf->data = data;
-	swap_buf->refcnt = 1;
-
-	initsleeplock(&(swap_buf->lock), "swap buffer");
-
-	return;
-}
-
 uint read_swap_block(char *data, uint blockno) {
 	/* read the swap block into the buffer pointed by the buffer */
-	struct buf swap_buf;
-
-	init_swap_buf(&swap_buf, data, blockno, 0);
-
-	acquiresleep(&(swap_buf.lock));
-	iderw(&swap_buf);
 
 	return SWAP_BLOCK_SIZE;
 }
 
 uint write_swap_block(const char *data, uint blockno){
 
-	struct buf swap_buf;
-
-	init_swap_buf(&swap_buf, data, blockno, B_DIRTY);
-
-	acquiresleep(&(swap_buf.lock));
-	iderw(&swap_buf);
 
 	return SWAP_BLOCK_SIZE;
 }

@@ -26,8 +26,6 @@
 #include "fs.h"
 #include "buf.h"
 
-uchar buf_data[NBUF][BSIZE];
-
 struct {
   struct spinlock lock;
   struct buf buf[NBUF];
@@ -52,8 +50,6 @@ binit(void)
   for(i = 0, b = bcache.buf; b < bcache.buf+NBUF; i++, b++){
     b->next = bcache.head.next;
     b->prev = &bcache.head;
-	b->data = buf_data[i];
-	b->bsize = BSIZE;
     initsleeplock(&b->lock, "buffer");
     bcache.head.next->prev = b;
     bcache.head.next = b;

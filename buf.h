@@ -1,14 +1,15 @@
+#define MAX_BLOCK_SIZE (4096)
+
 struct buf {
   int flags;
   uint dev;
   uint blockno;
-  uint bsize;
   struct sleeplock lock;
   uint refcnt;
   struct buf *prev; // LRU cache list
   struct buf *next;
   struct buf *qnext; // disk queue
-  uchar *data;
+  uchar data[MAX_BLOCK_SIZE];
 };
 
 #define B_VALID 0x2  // buffer has been read from disk
