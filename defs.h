@@ -59,7 +59,7 @@ int             writei(struct inode*, char*, uint, uint);
 struct inode*	iget(uint dev, uint inum);
 // ide.c
 void            ideinit(void);
-void            ideintr(void);
+void            ideintr(int);
 void            iderw(struct buf*);
 
 // ioapic.c

@@ -7,4 +7,7 @@ typedef unsigned char  uchar;
 typedef uint pde_t;
 typedef uint pte_t;
 
+
+#define UCHAR_BITS (sizeof(uchar) * 8)
+
 #endif
