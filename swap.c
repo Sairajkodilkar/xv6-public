@@ -4,6 +4,8 @@
 #include "sleeplock.h"
 #include "buf.h"
 
+#define SECTOR_SIZE (512)
+
 /* SWAP structure:
  *		first block is swap header
  *		second block is swap bitmap
@@ -71,11 +73,33 @@ void dealloc_swap(uint swap_blockno) {
 uint read_swap_block(char *data, uint blockno) {
 	/* read the swap block into the buffer pointed by the buffer */
 
+	uint sector_no, sectors_per_block;
+
+	sectors_per_block = (SWAP_BLOCK_SIZE / SECTOR_SIZE);
+	sector_no = blockno * sectors_per_block;
+
+	for(int i = 0; i < sectors_per_block; i++) {
+		struct buf *b = bread(SWAP_DEV, sector_no + i);
+		memmove(data + i * SECTOR_SIZE, b->data, SECTOR_SIZE);
+		brelse(b);
+	}
+
 	return SWAP_BLOCK_SIZE;
 }
 
 uint write_swap_block(const char *data, uint blockno){
 
+	uint sector_no, sectors_per_block;
+
+	sectors_per_block = (SWAP_BLOCK_SIZE / SECTOR_SIZE);
+	sector_no = blockno * sectors_per_block;
+
+	for(int i = 0; i < sectors_per_block; i++) {
+		struct buf *b = bread(SWAP_DEV, sector_no + i);
+		memmove(b->data, data + i * SECTOR_SIZE, SECTOR_SIZE);
+		bwrite(b);
+		brelse(b);
+	}
 
 	return SWAP_BLOCK_SIZE;
 }

@@ -29,6 +29,8 @@ static int load_swap_page(uint page_vaddr) {
 	return 0;
 }
 
+char x[4096] = "sairaj Kodilkar";
+
 void page_fault_intr() {
 
 	uint pgflt_vaddr;
