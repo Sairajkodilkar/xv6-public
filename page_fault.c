@@ -11,6 +11,10 @@
 
 static int load_fs_page(char *vaddr, const struct disk_mapping *dm) {
 	struct inode *ip;
+
+	if(get_dm_offset(dm) == INVALID_OFFSET)
+		return 0;
+
 	begin_op();
 	ip = iget(FILE_SYSTEM_DEV, get_dm_inum(dm));
 	ilock(ip);

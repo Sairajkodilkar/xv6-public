@@ -13,8 +13,10 @@
 #define IS_SWAP_MAP(dm) (dm->flags & SWAP_MAP)
 #define IS_IN_MEM(dm)	(dm->flags & IN_MEM)
 
+#define INVALID_OFFSET	(-1)
+
 struct file_map {
-	uint offset; /* offset in case of file system*/
+	int offset; /* offset in case of file system*/
 	uint inum; /* inode number of the file */
 	uint size; /* actual on disk size */
 };
@@ -32,7 +34,7 @@ struct disk_mapping {
 	} map;
 };
 
-void map_to_disk(struct disk_mapping *dm, uint vaddr, uint offset, 
+void map_to_disk(struct disk_mapping *dm, uint vaddr, int offset, 
 		uint flags, uint inum);
 
 static inline uint
@@ -72,7 +74,7 @@ set_dm_size(struct disk_mapping *dm, uint size) {
 }
 
 static inline void 
-set_dm_offset(struct disk_mapping *dm, uint offset) {
+set_dm_offset(struct disk_mapping *dm, int offset) {
 	dm->map.fm.offset = offset;
 }
 
@@ -92,7 +94,7 @@ set_dm_vaddr(struct disk_mapping *dm, uint vaddr) {
 }
 
 static inline void 
-set_dm_block_no(struct disk_mapping *dm, uint vaddr) {
-	dm->map.sm.block_num = vaddr;
+set_dm_block_no(struct disk_mapping *dm, uint block_no) {
+	dm->map.sm.block_num = block_no;
 }
 #endif

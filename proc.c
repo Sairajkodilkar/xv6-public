@@ -551,7 +551,7 @@ procdump(void)
  * file 
  */
 void proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz, 
-		uint newsz, uint offset, uint flags, uint inum) {
+		uint newsz, int offset, uint flags, uint inum) {
 
 	struct disk_mapping *dm;
 	uint i;
@@ -620,7 +620,6 @@ void clear_proc_disk_mapping(struct proc_disk_mapping *pdm) {
 	pdm->size = 0;
 	for(int i = 0; i < VPP; i++) {
 		dm = &(pdm->proc_mapping[i]);
-		/*TODO: if swap then release the swap */
 		if(IS_SWAP_MAP(dm) && !IS_IN_MEM(dm)) {
 			dealloc_swap(get_dm_block_num(dm));
 		}

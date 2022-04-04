@@ -124,7 +124,7 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
-void			proc_map_to_disk(struct proc_disk_mapping *, uint, uint, uint, uint, uint);
+void			proc_map_to_disk(struct proc_disk_mapping *, uint, uint, int, uint, uint);
 struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *, uint vaddr);
 void			free_proc_disk_mapping(struct proc_disk_mapping *, uint , uint );
 void			clear_proc_disk_mapping(struct proc_disk_mapping *);
@@ -197,6 +197,7 @@ void            clearpteu(pde_t *pgdir, char *uva);
 void			setptep(pde_t *, char *);
 void			clearptep(pde_t *, char *);
 pte_t*			getpte(pde_t *, char *);
+uint			swap_out_page(pde_t *, char *);
 
 //disk_mapping.c
 void map_to_file(uint, uint, uint);

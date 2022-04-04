@@ -18,12 +18,14 @@ exec(char *path, char **argv)
   uint flags;
   uint argc, sz, sp, ustack[3+MAXARG+1];
   uint inum;
-  uint swap_block_no;
+  uint swap_blockno;
+  char *page_addr;
   struct elfhdr elf;
   struct inode *ip;
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
   struct proc *curproc = myproc();
+  struct disk_mapping *dm;
 
   begin_op();
 
@@ -65,7 +67,7 @@ exec(char *path, char **argv)
 
 	flags &= ~PTE_P;
 
-	proc_map_to_disk(&new_pdm, sz, ph.vaddr + ph.memsz, ph.off, FILE_MAP, inum);
+	proc_map_to_disk(&new_pdm, sz, ph.vaddr + ph.memsz, INVALID_OFFSET, FILE_MAP, inum);
 	
 	if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz, flags)) == 0)
 		goto bad;
@@ -122,11 +124,12 @@ exec(char *path, char **argv)
 		  last = s+1;
   safestrcpy(curproc->name, last, sizeof(curproc->name));
 
-  swap_block_no = alloc_swap();
-  kva = uva2ka(pgdir, oldsz);
-  write_swap_block(kva, swap_block_no);
-
-  /*TODO swapout the page here */
+  for(int i = 1; i < 3; i++) {
+	  page_addr = (char *)(sz - i * PGSIZE);
+	  swap_blockno = swap_out_page(pgdir, page_addr);
+	  dm = find_disk_mapping(&new_pdm, page_addr);
+	  set_dm_block_no(dm, swap_blockno);
+  }
 
   // Commit to the user image.
   oldpgdir = curproc->pgdir;

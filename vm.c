@@ -6,6 +6,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "elf.h"
+#include "swap.h"
 
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
@@ -343,7 +344,6 @@ void
 clearptep(pde_t *pgdir, char *uva)
 {
 	pte_t *pte;
-	cprintf("clearing PTE\n");
 
 	pte = getpte(pgdir, uva);
 	*pte = *pte & ~PTE_P;
@@ -424,6 +424,20 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 		va = va0 + PGSIZE;
 	}
 	return 0;
+}
+
+uint swap_out_page(pde_t *pgdir, char *vaddr) {
+
+	uint swap_blockno;
+	char *kva;
+
+	kva = uva2ka(pgdir, vaddr);
+	swap_blockno = alloc_swap();
+	write_swap_block(kva, swap_blockno);
+	clearptep(pgdir, vaddr);
+	kfree(kva);
+
+	return swap_blockno;
 }
 
 //PAGEBREAK!
