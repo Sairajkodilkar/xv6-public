@@ -13,7 +13,6 @@ int
 exec(char *path, char **argv)
 {
   char *s, *last;
-  char *kva;
   int i, off;
   uint flags;
   uint argc, sz, sp, ustack[3+MAXARG+1];
@@ -89,10 +88,8 @@ exec(char *path, char **argv)
   /* here swap block no is passed as 0 because its not in memory */
   proc_map_to_disk(&new_pdm, sz, sz + 2*PGSIZE, 0, SWAP_MAP, -1);
 
-  if((sz = allocuvm(pgdir, sz, sz + PGSIZE, PTE_P|PTE_W)) == 0)
+  if((sz = allocuvm(pgdir, sz, sz + PGSIZE, PTE_W)) == 0)
 	  goto bad;
-
-  uint oldsz  = sz;
 
   if((sz = allocuvm(pgdir, sz, sz + PGSIZE, PTE_P|PTE_U|PTE_W)) == 0)
 	  goto bad;
@@ -124,12 +121,12 @@ exec(char *path, char **argv)
 		  last = s+1;
   safestrcpy(curproc->name, last, sizeof(curproc->name));
 
-  for(int i = 1; i < 3; i++) {
-	  page_addr = (char *)(sz - i * PGSIZE);
-	  swap_blockno = swap_out_page(pgdir, page_addr);
-	  dm = find_disk_mapping(&new_pdm, page_addr);
-	  set_dm_block_no(dm, swap_blockno);
-  }
+  page_addr = (char *)(sz -  PGSIZE);
+  swap_blockno = swap_out_page(pgdir, page_addr);
+  dm = find_disk_mapping(&new_pdm, (uint)page_addr);
+  set_dm_block_no(dm, swap_blockno);
+
+  curproc->pages_in_memory = 0;
 
   // Commit to the user image.
   oldpgdir = curproc->pgdir;

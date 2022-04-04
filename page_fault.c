@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "swap.h"
 
 #define FILE_SYSTEM_DEV (1)
 
@@ -28,6 +29,22 @@ static int load_fs_page(char *vaddr, const struct disk_mapping *dm) {
 	return count;
 }
 
+static char *alloc_mem(pte_t *pte) {
+	uint old_flags;
+	char *mem;
+
+	mem = kalloc();
+	if(mem == 0) {
+		panic("out of memory\n");
+	}
+	memset((void *)mem, 0, PGSIZE);
+	old_flags = PTE_FLAGS(*pte);
+	*pte = 0;
+	*pte = V2P(mem) | PTE_P | old_flags;
+
+	return mem;
+}
+
 void page_fault_intr() {
 
 	uint pgflt_vaddr;
@@ -45,29 +62,23 @@ void page_fault_intr() {
 
 	dm = find_disk_mapping(&(curproc->pdm), PGROUNDDOWN(pgflt_vaddr));
 
-	if(dm < 0)
-		/* TODO: in future kill the program */
-		panic("Mapping not found\n");
+	if(dm < 0) {
+		cprintf("page fault intr: killed %s\n", curproc->name);
+		curproc->killed = 1;
+	}
 
 	pte = getpte(curproc->pgdir, (char *)get_dm_vaddr(dm));
 
 	/* Allocate the memory */
-	mem = kalloc();
-	if(mem == 0) {
-		panic("out of memory\n");
-	}
-	memset((void *)mem, 0, PGSIZE);
-	old_flags = PTE_FLAGS(*pte);
-	*pte = 0;
-	*pte = V2P(mem) | PTE_P | old_flags;
+	mem = alloc_mem(pte);
+	curproc->pages_in_memory++;
 
 	/* Read the ELF file */
 	if(IS_SWAP_MAP(dm)) {
-		cprintf("swapping\n");
 		read_swap_block(mem, get_dm_block_num(dm));
+		dealloc_swap(get_dm_block_num(dm));
 	}
 	else {
-		cprintf("here\n");
 		load_fs_page(mem, dm);
 	}
 
