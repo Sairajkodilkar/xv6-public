@@ -13,6 +13,7 @@ int
 exec(char *path, char **argv)
 {
   char *s, *last;
+  char *kva;
   int i, off;
   uint flags;
   uint argc, sz, sp, ustack[3+MAXARG+1];
@@ -83,16 +84,17 @@ exec(char *path, char **argv)
   // Make the first inaccessible.  Use the second as the user stack.
   sz = PGROUNDUP(sz);
 
-  if((swap_block_no = alloc_swap()) < 0) {
-	  panic("swap: out of space");
-  }
-  proc_map_to_disk(&new_pdm, sz, sz + 2*PGSIZE, swap_block_no, SWAP_MAP, -1);
+  /* here swap block no is passed as 0 because its not in memory */
+  proc_map_to_disk(&new_pdm, sz, sz + 2*PGSIZE, 0, SWAP_MAP, -1);
 
-  if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE, PTE_P|PTE_U|PTE_W)) == 0)
+  if((sz = allocuvm(pgdir, sz, sz + PGSIZE, PTE_P|PTE_W)) == 0)
 	  goto bad;
 
+  uint oldsz  = sz;
 
-  clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
+  if((sz = allocuvm(pgdir, sz, sz + PGSIZE, PTE_P|PTE_U|PTE_W)) == 0)
+	  goto bad;
+
   sp = sz;
 
   // Push argument strings, prepare rest of stack in ustack.
@@ -120,7 +122,12 @@ exec(char *path, char **argv)
 		  last = s+1;
   safestrcpy(curproc->name, last, sizeof(curproc->name));
 
+  swap_block_no = alloc_swap();
+  kva = uva2ka(pgdir, oldsz);
+  write_swap_block(kva, swap_block_no);
+
   /*TODO swapout the page here */
+
   // Commit to the user image.
   oldpgdir = curproc->pgdir;
   curproc->pgdir = pgdir;

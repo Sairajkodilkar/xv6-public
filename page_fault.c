@@ -9,7 +9,7 @@
 
 #define FILE_SYSTEM_DEV (1)
 
-static int load_disk_page(char *vaddr, const struct disk_mapping *dm) {
+static int load_fs_page(char *vaddr, const struct disk_mapping *dm) {
 	struct inode *ip;
 	begin_op();
 	ip = iget(FILE_SYSTEM_DEV, get_dm_inum(dm));
@@ -24,16 +24,10 @@ static int load_disk_page(char *vaddr, const struct disk_mapping *dm) {
 	return count;
 }
 
-static int load_swap_page(uint page_vaddr) {
-	panic("load swap page: Not yet implemented\n");
-	return 0;
-}
-
-char x[4096] = "sairaj Kodilkar";
-
 void page_fault_intr() {
 
 	uint pgflt_vaddr;
+	uint old_flags;
 	char *mem;
 	pte_t *pte;
 	struct proc *curproc;
@@ -46,13 +40,10 @@ void page_fault_intr() {
 	setptep(curproc->pgdir, (char *)pgflt_vaddr);
 
 	dm = find_disk_mapping(&(curproc->pdm), PGROUNDDOWN(pgflt_vaddr));
+
 	if(dm < 0)
 		/* TODO: in future kill the program */
 		panic("Mapping not found\n");
-
-	if(IS_SWAP_MAP(dm)) {
-		panic("Swap yet to be implemented");
-	}
 
 	pte = getpte(curproc->pgdir, (char *)get_dm_vaddr(dm));
 
@@ -62,11 +53,23 @@ void page_fault_intr() {
 		panic("out of memory\n");
 	}
 	memset((void *)mem, 0, PGSIZE);
+	old_flags = PTE_FLAGS(*pte);
 	*pte = 0;
-	*pte = V2P(mem) | PTE_P | PTE_U | PTE_W;
+	*pte = V2P(mem) | PTE_P | old_flags;
 
 	/* Read the ELF file */
-	load_disk_page(mem, dm);
+	if(IS_SWAP_MAP(dm)) {
+		cprintf("swapping\n");
+		read_swap_block(mem, get_dm_block_num(dm));
+	}
+	else {
+		cprintf("here\n");
+		load_fs_page(mem, dm);
+	}
+
+	old_flags = get_dm_flags(dm);
+	set_dm_flags(dm, old_flags|IN_MEM);
+	/* TODO: dealloc swap */
 
 	return;
 }

@@ -11,6 +11,7 @@
 #define IS_MAPPED(dm)	(dm->flags & MAPPED)
 #define IS_FILE_MAP(dm) (dm->flags & FILE_MAP)
 #define IS_SWAP_MAP(dm) (dm->flags & SWAP_MAP)
+#define IS_IN_MEM(dm)	(dm->flags & IN_MEM)
 
 struct file_map {
 	uint offset; /* offset in case of file system*/
