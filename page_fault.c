@@ -45,9 +45,15 @@ static char *alloc_mem(pte_t *pte) {
 	return mem;
 }
 
+static struct disk_mapping *
+page_replacement(pde_t *pgdir, struct proc_disk_mapping *pdm) {
+	return 0;
+}
+
 void page_fault_intr() {
 
 	uint pgflt_vaddr;
+	uint swap_blockno;
 	uint old_flags;
 	char *mem;
 	pte_t *pte;
@@ -56,24 +62,36 @@ void page_fault_intr() {
 
 	pgflt_vaddr = rcr2();
 	curproc = myproc();
-	cprintf("PGFLT address %x, prog %d, prog name %s\n", pgflt_vaddr, curproc->pid, curproc->name);
+	cprintf("PGFLT address %x, prog %d, prog name %s\n", pgflt_vaddr, 
+			curproc->pid, curproc->name);
+
+	if(curproc->pages_in_memory > MAX_PAGES) {
+
+		dm = page_replacement(curproc->pgdir, &(curproc->pdm));
+		swap_blockno = swap_out_page(curproc->pgdir, (char *)(dm->vaddr));
+		set_dm_block_no(dm, swap_blockno);
+
+		old_flags = get_dm_flags(dm);
+		set_dm_flags(dm, old_flags & ~IN_MEM);
+
+		curproc->pages_in_memory--;
+	}
 
 	setptep(curproc->pgdir, (char *)pgflt_vaddr);
 
 	dm = find_disk_mapping(&(curproc->pdm), PGROUNDDOWN(pgflt_vaddr));
 
-	if(dm < 0) {
+	if(dm == 0) {
 		cprintf("page fault intr: killed %s\n", curproc->name);
 		curproc->killed = 1;
+		return;
 	}
 
 	pte = getpte(curproc->pgdir, (char *)get_dm_vaddr(dm));
 
-	/* Allocate the memory */
 	mem = alloc_mem(pte);
 	curproc->pages_in_memory++;
 
-	/* Read the ELF file */
 	if(IS_SWAP_MAP(dm)) {
 		read_swap_block(mem, get_dm_block_num(dm));
 		dealloc_swap(get_dm_block_num(dm));
@@ -84,7 +102,6 @@ void page_fault_intr() {
 
 	old_flags = get_dm_flags(dm);
 	set_dm_flags(dm, old_flags|IN_MEM);
-	/* TODO: dealloc swap */
 
 	return;
 }

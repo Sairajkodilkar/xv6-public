@@ -198,7 +198,7 @@ fork(void)
     return -1;
   }
 
-  np->pdm = curproc->pdm;
+  copy_pdm(&(np->pdm), &(curproc->pdm));
 
   // Copy process state from proc.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
@@ -590,10 +590,21 @@ struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *pdm, uint vaddr
 	return 0;
 }
 
-void copy_pdm(struct proc_disk_mapping *dest, const struct proc_disk_mapping *src) {
+void copy_pdm(struct proc_disk_mapping *dest, struct proc_disk_mapping *src) {
 	/* TODO: copy the src disk mapping to the destination 
 	 *		while copying allocate the new swap space for that program
 	 */
+	struct disk_mapping *dm;
+	for(int i = 0; i < VPP; i++) {
+		dm = &(src->proc_mapping[i]);
+		dest->proc_mapping[i] = *dm;
+		if(!IS_IN_MEM(dm) && IS_SWAP_MAP(dm)){
+			set_dm_block_no(&(dest->proc_mapping[i]), 
+					copy_swap_page(get_dm_block_num(dm)));
+		}
+	}
+
+	return;
 }
 
 void free_proc_disk_mapping(struct proc_disk_mapping *pdm, uint start, uint end) {

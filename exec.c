@@ -18,6 +18,7 @@ exec(char *path, char **argv)
   uint argc, sz, sp, ustack[3+MAXARG+1];
   uint inum;
   uint swap_blockno;
+  uint old_flags;
   char *page_addr;
   struct elfhdr elf;
   struct inode *ip;
@@ -86,10 +87,12 @@ exec(char *path, char **argv)
   sz = PGROUNDUP(sz);
 
   /* here swap block no is passed as 0 because its not in memory */
-  proc_map_to_disk(&new_pdm, sz, sz + 2*PGSIZE, 0, SWAP_MAP, -1);
+  proc_map_to_disk(&new_pdm, sz, sz + PGSIZE, 0, IN_MEM | SWAP_MAP, -1);
 
   if((sz = allocuvm(pgdir, sz, sz + PGSIZE, PTE_W)) == 0)
 	  goto bad;
+
+  proc_map_to_disk(&new_pdm, sz, sz + PGSIZE, 0, SWAP_MAP, -1);
 
   if((sz = allocuvm(pgdir, sz, sz + PGSIZE, PTE_P|PTE_U|PTE_W)) == 0)
 	  goto bad;
@@ -122,9 +125,13 @@ exec(char *path, char **argv)
   safestrcpy(curproc->name, last, sizeof(curproc->name));
 
   page_addr = (char *)(sz -  PGSIZE);
-  swap_blockno = swap_out_page(pgdir, page_addr);
   dm = find_disk_mapping(&new_pdm, (uint)page_addr);
+
+  swap_blockno = swap_out_page(pgdir, page_addr);
   set_dm_block_no(dm, swap_blockno);
+
+  old_flags = get_dm_flags(dm);
+  set_dm_flags(dm, old_flags & ~IN_MEM);
 
   curproc->pages_in_memory = 0;
 

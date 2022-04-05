@@ -74,12 +74,13 @@ uint read_swap_block(char *data, uint blockno) {
 	/* read the swap block into the buffer pointed by the buffer */
 
 	uint sector_no, sectors_per_block;
+	struct buf *b;
 
 	sectors_per_block = (SWAP_BLOCK_SIZE / SECTOR_SIZE);
 	sector_no = blockno * sectors_per_block;
 
 	for(int i = 0; i < sectors_per_block; i++) {
-		struct buf *b = bread(SWAP_DEV, sector_no + i);
+		b = bread(SWAP_DEV, sector_no + i);
 		memmove(data + i * SECTOR_SIZE, b->data, SECTOR_SIZE);
 		brelse(b);
 	}
@@ -102,5 +103,25 @@ uint write_swap_block(const char *data, uint blockno){
 	}
 
 	return SWAP_BLOCK_SIZE;
+}
+
+uint copy_swap_page(uint block_no) {
+
+	uint sector_no, sectors_per_block, nblock, nsector_no;
+
+	sectors_per_block = (SWAP_BLOCK_SIZE / SECTOR_SIZE);
+	sector_no = block_no * sectors_per_block;
+
+	nblock = alloc_swap();
+	nsector_no = nblock * sectors_per_block;
+
+	for(int i = 0; i < sectors_per_block; i++) {
+		struct buf *b = bread(SWAP_DEV, sector_no + i);
+		b->blockno = nsector_no + i;
+		bwrite(b);
+		brelse(b);
+	}
+
+	return nblock;
 }
 

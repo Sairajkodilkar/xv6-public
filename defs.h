@@ -129,6 +129,8 @@ struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *, uint vaddr);
 void			free_proc_disk_mapping(struct proc_disk_mapping *, uint , uint );
 void			clear_proc_disk_mapping(struct proc_disk_mapping *);
 void			init_proc_disk_mapping(struct proc_disk_mapping *);
+void			copy_pdm(struct proc_disk_mapping *, 
+								struct proc_disk_mapping *);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

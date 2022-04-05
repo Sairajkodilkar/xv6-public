@@ -16,5 +16,6 @@ uint alloc_swap(void);
 void dealloc_swap(uint block_no);
 uint read_swap_block(char *buffer, uint block_no);
 uint write_swap_block(const char *buffer, uint block_no);
+uint copy_swap_page(uint);
 
 #endif
