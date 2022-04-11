@@ -64,8 +64,8 @@ struct proc {
 
   struct spinlock *pdm_lock;
   uint pages_in_memory;
+  struct disk_mapping *head;
   struct proc_disk_mapping pdm;// process virtual memory mapping
-  struct disk_mapping *dm;
 };
 
 // Process memory is laid out contiguously, low addresses first:

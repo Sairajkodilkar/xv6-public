@@ -32,6 +32,7 @@ struct disk_mapping {
 		struct file_map fm;
 		struct swap_map sm;
 	} map;
+	struct disk_mapping *prev, *next;
 };
 
 void map_to_disk(struct disk_mapping *dm, uint vaddr, int offset, 

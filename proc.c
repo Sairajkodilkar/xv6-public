@@ -66,6 +66,21 @@ myproc(void) {
   return p;
 }
 
+struct disk_mapping *make_dm_list(struct proc_disk_mapping *pdm) {
+
+	struct disk_mapping *dm, *prev;
+	
+	prev = &(pdm->proc_mapping[VPP - 1]);
+
+	for(int i = 0; i < VPP; i++) {
+		dm = &(pdm->proc_mapping[i]);
+		dm->prev = prev;
+		dm->next = &(pdm->proc_mapping[(i + 1) % VPP]);
+		prev = dm;
+	}
+
+	return &(pdm->proc_mapping[0]);
+}
 //PAGEBREAK: 32
 // Look in the process table for an UNUSED proc.
 // If found, change state to EMBRYO and initialize
@@ -87,6 +102,7 @@ allocproc(void)
   return 0;
 
 found:
+  p->head = make_dm_list(&(p->pdm));
   p->state = EMBRYO;
   p->pid = nextpid++;
 
@@ -214,6 +230,7 @@ fork(void)
 	np->sz = curproc->sz;
 	np->parent = curproc;
 	*np->tf = *curproc->tf;
+
 
 	// Clear %eax so that fork returns 0 in the child.
 	np->tf->eax = 0;
@@ -598,13 +615,18 @@ void copy_pdm(struct proc_disk_mapping *dest, struct proc_disk_mapping *src) {
 	/* TODO: copy the src disk mapping to the destination 
 	 *		while copying allocate the new swap space for that program
 	 */
-	struct disk_mapping *dm;
+	struct disk_mapping *sdm, *ddm;
 	for(int i = 0; i < VPP; i++) {
-		dm = &(src->proc_mapping[i]);
-		dest->proc_mapping[i] = *dm;
-		if(!IS_IN_MEM(dm) && IS_SWAP_MAP(dm)){
+		sdm = &(src->proc_mapping[i]);
+		ddm = &(dest->proc_mapping[i]);
+
+		ddm->vaddr = sdm->vaddr;
+		ddm->flags = sdm->flags;
+		ddm->map = sdm->map;
+
+		if(!IS_IN_MEM(sdm) && IS_SWAP_MAP(sdm)){
 			set_dm_block_no(&(dest->proc_mapping[i]), 
-					copy_swap_page(get_dm_block_num(dm)));
+					copy_swap_page(get_dm_block_num(sdm)));
 		}
 	}
 
@@ -641,3 +663,4 @@ void clear_proc_disk_mapping(struct proc_disk_mapping *pdm) {
 		set_dm_flags(dm, FREE);
 	}
 }
+

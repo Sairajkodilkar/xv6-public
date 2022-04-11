@@ -58,16 +58,17 @@ void page_fault_intr() {
 	char *mem;
 	pte_t *pte;
 	struct proc *curproc;
-	struct disk_mapping *dm;
+	struct disk_mapping *dm, *head;
 
 	pgflt_vaddr = rcr2();
 	curproc = myproc();
 	cprintf("PGFLT address %x, prog %d, prog name %s\n", pgflt_vaddr, 
 			curproc->pid, curproc->name);
 
-	if(curproc->pages_in_memory > MAX_PAGES) {
+	if(curproc->pages_in_memory > 2) {
+		cprintf("replacing\n");
 
-		dm = page_replacement(curproc->pgdir, &(curproc->pdm));
+		dm = curproc->head->prev;
 		swap_blockno = swap_out_page(curproc->pgdir, (char *)(dm->vaddr));
 		set_dm_block_no(dm, swap_blockno);
 
@@ -81,6 +82,13 @@ void page_fault_intr() {
 
 	dm = find_disk_mapping(&(curproc->pdm), PGROUNDDOWN(pgflt_vaddr));
 
+	head = curproc->head;
+	dm->prev->next = dm->next;
+	dm->next->prev = dm->prev;
+	dm->next = head;
+	dm->prev = head->prev;
+	curproc->head = dm;
+
 	if(dm == 0) {
 		cprintf("page fault intr: killed %s\n", curproc->name);
 		curproc->killed = 1;
@@ -91,6 +99,7 @@ void page_fault_intr() {
 
 	mem = alloc_mem(pte);
 	curproc->pages_in_memory++;
+	cprintf("%d\n", curproc->pages_in_memory);
 
 	if(IS_SWAP_MAP(dm)) {
 		read_swap_block(mem, get_dm_block_num(dm));

@@ -27,6 +27,9 @@ exec(char *path, char **argv)
   struct proc *curproc = myproc();
   struct disk_mapping *dm;
 
+  struct disk_mapping *tmp;
+  tmp = curproc->head;
+
   begin_op();
 
   if((ip = namei(path)) == 0){
@@ -50,33 +53,32 @@ exec(char *path, char **argv)
 
 
   // Load program into memory.
-	struct proc_disk_mapping new_pdm;
-	init_proc_disk_mapping(&new_pdm);
-
+  struct proc_disk_mapping new_pdm;
+  init_proc_disk_mapping(&new_pdm);
   sz = 0;
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
 	  flags = PTE_U | PTE_P | PTE_W;
-    if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))
-      goto bad;
-    if(ph.type != ELF_PROG_LOAD)
-      continue;
-    if(ph.memsz < ph.filesz)
-      goto bad;
-    if(ph.vaddr + ph.memsz < ph.vaddr)
-      goto bad;
+	  if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))
+		  goto bad;
+	  if(ph.type != ELF_PROG_LOAD)
+		  continue;
+	  if(ph.memsz < ph.filesz)
+		  goto bad;
+	  if(ph.vaddr + ph.memsz < ph.vaddr)
+		  goto bad;
 
-	flags &= ~PTE_P;
+	  flags &= ~PTE_P;
 
-	proc_map_to_disk(&new_pdm, sz, ph.vaddr + ph.memsz, INVALID_OFFSET, FILE_MAP, inum);
-	
-	if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz, flags)) == 0)
-		goto bad;
+	  proc_map_to_disk(&new_pdm, sz, ph.vaddr + ph.memsz, INVALID_OFFSET, FILE_MAP, inum);
 
-	if(ph.vaddr % PGSIZE != 0)
-		goto bad;
-	
-	if(loaduvm(&new_pdm, pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
-		goto bad;
+	  if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz, flags)) == 0)
+		  goto bad;
+
+	  if(ph.vaddr % PGSIZE != 0)
+		  goto bad;
+
+	  if(loaduvm(&new_pdm, pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
+		  goto bad;
   }
   iunlockput(ip);
   end_op();
@@ -143,6 +145,7 @@ exec(char *path, char **argv)
   curproc->tf->esp = sp;
   switchuvm(curproc);
   clear_proc_disk_mapping(&(curproc->pdm));
+  make_dm_list(&new_pdm);
   curproc->pdm = new_pdm;
   freevm(oldpgdir);
   return 0;
