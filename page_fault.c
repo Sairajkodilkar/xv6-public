@@ -62,15 +62,19 @@ void page_fault_intr() {
 
 	pgflt_vaddr = rcr2();
 	curproc = myproc();
-	cprintf("PGFLT address %x, prog %d, prog name %s\n", pgflt_vaddr, 
+	cprintf("PGFLT address %x, prog %d, prog name %s\n", PGROUNDDOWN(pgflt_vaddr), 
 			curproc->pid, curproc->name);
 
-	if(curproc->pages_in_memory > 2 && 0) {
+	if(curproc->pages_in_memory > 2) {
 		cprintf("replacing\n");
 
+		dm = find_disk_mapping(&curproc->pdm, 0x2000);
+		if(dm != 0)
+			cprintf("FOUND ADDRESS\n");
 		dm = curproc->head->prev;
 		while(!IS_IN_MEM(dm)) {
 			dm = dm->prev;
+			cprintf("vaddr: %x %x\n", dm->vaddr, dm->flags);
 		}
 
 		swap_blockno = swap_out_page(curproc->pgdir, (char *)(dm->vaddr));
@@ -103,7 +107,7 @@ void page_fault_intr() {
 
 	mem = alloc_mem(pte);
 	curproc->pages_in_memory++;
-	cprintf("%d\n", curproc->pages_in_memory);
+	cprintf("pages in mem: %d\n", curproc->pages_in_memory);
 
 	if(IS_SWAP_MAP(dm)) {
 		read_swap_block(mem, get_dm_block_num(dm));

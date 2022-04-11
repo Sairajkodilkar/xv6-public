@@ -227,10 +227,10 @@ fork(void)
 		np->state = UNUSED;
 		return -1;
 	}
+	np->pages_in_memory = curproc->pages_in_memory;
 	np->sz = curproc->sz;
 	np->parent = curproc;
 	*np->tf = *curproc->tf;
-
 
 	// Clear %eax so that fork returns 0 in the child.
 	np->tf->eax = 0;
@@ -620,6 +620,7 @@ void copy_pdm(struct proc_disk_mapping *dest, struct proc_disk_mapping *src) {
 		sdm = &(src->proc_mapping[i]);
 		ddm = &(dest->proc_mapping[i]);
 
+		cprintf("copypdm %x %x\n", sdm->vaddr, sdm->flags);
 		ddm->vaddr = sdm->vaddr;
 		ddm->flags = sdm->flags;
 		ddm->map = sdm->map;

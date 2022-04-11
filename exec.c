@@ -145,8 +145,7 @@ exec(char *path, char **argv)
   curproc->tf->esp = sp;
   switchuvm(curproc);
   clear_proc_disk_mapping(&(curproc->pdm));
-  make_dm_list(&new_pdm);
-  curproc->pdm = new_pdm;
+  copy_pdm(&curproc->pdm, &new_pdm);
   freevm(oldpgdir);
   return 0;
 
