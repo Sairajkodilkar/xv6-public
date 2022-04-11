@@ -432,6 +432,8 @@ uint swap_out_page(pde_t *pgdir, char *vaddr) {
 	char *kva;
 
 	kva = uva2ka(pgdir, vaddr);
+	if(kva == 0)
+		panic("swap out page");
 	swap_blockno = alloc_swap();
 	write_swap_block(kva, swap_blockno);
 	clearptep(pgdir, vaddr);

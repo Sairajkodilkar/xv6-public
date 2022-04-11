@@ -65,10 +65,14 @@ void page_fault_intr() {
 	cprintf("PGFLT address %x, prog %d, prog name %s\n", pgflt_vaddr, 
 			curproc->pid, curproc->name);
 
-	if(curproc->pages_in_memory > 2) {
+	if(curproc->pages_in_memory > 2 && 0) {
 		cprintf("replacing\n");
 
 		dm = curproc->head->prev;
+		while(!IS_IN_MEM(dm)) {
+			dm = dm->prev;
+		}
+
 		swap_blockno = swap_out_page(curproc->pgdir, (char *)(dm->vaddr));
 		set_dm_block_no(dm, swap_blockno);
 
