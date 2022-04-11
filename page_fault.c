@@ -45,10 +45,6 @@ static char *alloc_mem(pte_t *pte) {
 	return mem;
 }
 
-static struct disk_mapping *
-page_replacement(pde_t *pgdir, struct proc_disk_mapping *pdm) {
-	return 0;
-}
 
 void page_fault_intr() {
 
@@ -62,13 +58,14 @@ void page_fault_intr() {
 
 	pgflt_vaddr = rcr2();
 	curproc = myproc();
-	cprintf("PGFLT address %x, prog %d, prog name %s\n", pgflt_vaddr, 
+	cprintf("PGFLT address %x, prog %d, prog name %s\n", PGROUNDDOWN(pgflt_vaddr), 
 			curproc->pid, curproc->name);
 
-	if(curproc->pages_in_memory > MAX_PAGES) {
+	if(curproc->pages_in_memory > 3) {
+		dm = &(curproc->pdm.proc_mapping[1]);
 
-		dm = page_replacement(curproc->pgdir, &(curproc->pdm));
 		swap_blockno = swap_out_page(curproc->pgdir, (char *)(dm->vaddr));
+		cprintf("swap blockno: %d\n", swap_blockno);
 		set_dm_block_no(dm, swap_blockno);
 
 		old_flags = get_dm_flags(dm);
@@ -93,6 +90,7 @@ void page_fault_intr() {
 	curproc->pages_in_memory++;
 
 	if(IS_SWAP_MAP(dm)) {
+		cprintf("reading swap\n");
 		read_swap_block(mem, get_dm_block_num(dm));
 		dealloc_swap(get_dm_block_num(dm));
 	}

@@ -87,7 +87,7 @@ exec(char *path, char **argv)
   sz = PGROUNDUP(sz);
 
   /* here swap block no is passed as 0 because its not in memory */
-  proc_map_to_disk(&new_pdm, sz, sz + PGSIZE, 0, IN_MEM | SWAP_MAP, -1);
+  proc_map_to_disk(&new_pdm, sz, sz + PGSIZE, 0, SWAP_MAP, -1);
 
   if((sz = allocuvm(pgdir, sz, sz + PGSIZE, PTE_W)) == 0)
 	  goto bad;

@@ -202,6 +202,8 @@ fork(void)
 	}
 
 	copy_pdm(&(np->pdm), &(curproc->pdm));
+	np->pages_in_memory = curproc->pages_in_memory;
+	np->page_replacement = curproc->page_replacement;
 
 	// Copy process state from proc.
 	if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
