@@ -1,7 +1,7 @@
 #include "types.h"
 #include "disk_mapping.h"
 #include "defs.h"
-void map_to_disk(struct disk_mapping *dm, uint vaddr, 
+void map_to_disk(struct disk_mapping *dm, uint vaddr,
 		int offset, uint flags, uint inum) {
 
 	dm->vaddr = vaddr;

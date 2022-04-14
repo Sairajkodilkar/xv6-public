@@ -553,9 +553,9 @@ procdump(void)
 
 
 /* Map the virtual addres from the range oldsz to newsz to the offset in the
- * file 
+ * file
  */
-void proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz, 
+void proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz,
 		uint newsz, int offset, uint flags, uint inum) {
 
 	struct disk_mapping *dm;
@@ -597,15 +597,12 @@ struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *pdm, uint vaddr
 }
 
 void copy_pdm(struct proc_disk_mapping *dest, struct proc_disk_mapping *src) {
-	/* TODO: copy the src disk mapping to the destination 
-	 *		while copying allocate the new swap space for that program
-	 */
 	struct disk_mapping *dm;
 	for(int i = 0; i < VPP; i++) {
 		dm = &(src->proc_mapping[i]);
 		dest->proc_mapping[i] = *dm;
 		if(!IS_IN_MEM(dm) && IS_SWAP_MAP(dm)){
-			set_dm_block_no(&(dest->proc_mapping[i]), 
+			set_dm_block_no(&(dest->proc_mapping[i]),
 					copy_swap_page(get_dm_block_num(dm)));
 		}
 	}

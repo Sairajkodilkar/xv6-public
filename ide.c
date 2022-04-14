@@ -88,7 +88,7 @@ idestart(struct buf *b)
 	  cprintf("%d\n", b->blockno);
     panic("incorrect blockno");
   }
-  
+
   int portno;
   if(b->dev <= 1)
 	  portno = 0x1f0;
