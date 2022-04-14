@@ -61,15 +61,18 @@ void page_fault_intr() {
 	cprintf("PGFLT address %x, prog %d, prog name %s\n", PGROUNDDOWN(pgflt_vaddr), 
 			curproc->pid, curproc->name);
 
-	if(curproc->pages_in_memory > 3) {
-		dm = &(curproc->pdm.proc_mapping[1]);
+	static int i = 0;
+	if(curproc->pages_in_memory > MAX_PAGES) {
+		do {
+			dm = &(curproc->pdm.proc_mapping[(i + 1) % VPP]);
+		} while(!IS_IN_MEM(dm) && dm->vaddr < curproc->sz);
 
+		cprintf("trying to swap out %x %d\n", dm->vaddr, dm->flags);
 		swap_blockno = swap_out_page(curproc->pgdir, (char *)(dm->vaddr));
-		cprintf("swap blockno: %d\n", swap_blockno);
+		cprintf("dm->vaddr: %x swap blockno: %d\n", dm->vaddr, swap_blockno);
 		set_dm_block_no(dm, swap_blockno);
 
-		old_flags = get_dm_flags(dm);
-		set_dm_flags(dm, old_flags & ~IN_MEM);
+		set_dm_flags(dm, MAPPED | SWAP_MAP);
 
 		curproc->pages_in_memory--;
 	}
@@ -90,16 +93,19 @@ void page_fault_intr() {
 	curproc->pages_in_memory++;
 
 	if(IS_SWAP_MAP(dm)) {
-		cprintf("reading swap\n");
+		cprintf("reading the swap %x %d\n",dm->vaddr, get_dm_block_num(dm));
 		read_swap_block(mem, get_dm_block_num(dm));
 		dealloc_swap(get_dm_block_num(dm));
 	}
 	else {
+		cprintf("reading the FS %x\n",dm->vaddr);
 		load_fs_page(mem, dm);
 	}
 
 	old_flags = get_dm_flags(dm);
 	set_dm_flags(dm, old_flags|IN_MEM);
+
+	cprintf("END PGFLT\n");
 
 	return;
 }

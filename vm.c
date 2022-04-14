@@ -368,6 +368,7 @@ copyuvm(pde_t *pgdir, uint sz)
 		pa = PTE_ADDR(*pte);
 		flags = PTE_FLAGS(*pte);
 		if(flags & PTE_P) {
+			cprintf("copying %x\n", i);
 			if((mem = kalloc()) == 0)
 				goto bad;
 			memmove(mem, (char*)P2V(pa), PGSIZE);
