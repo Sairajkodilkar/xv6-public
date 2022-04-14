@@ -184,10 +184,12 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
-	_long\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
+
+swap.img:
+	dd if=/dev/zero of=swap.img bs=4096 count=100
 
 -include *.d
 
@@ -225,7 +227,7 @@ CPUS := 2
 endif
 QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -drive file=swap.img,index=2,media=disk,format=raw -smp $(CPUS) -m 512 $(QEMUEXTRA)
 
-qemu: fs.img xv6.img
+qemu: fs.img xv6.img swap.img
 	$(QEMU) -serial mon:stdio $(QEMUOPTS)
 
 qemu-memfs: xv6memfs.img

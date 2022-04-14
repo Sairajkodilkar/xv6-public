@@ -18,7 +18,7 @@ extern int ncpu;
 /* Virtual address per process */
 #define VPP (20)
 /* Max memory pages per process */
-#define MAX_PAGES (4)
+#define MAX_PAGES (10)
 
 //PAGEBREAK: 17
 // Saved registers for kernel context switches.
