@@ -66,6 +66,8 @@ struct proc {
   uint pages_in_memory;
   struct disk_mapping *head;
   struct proc_disk_mapping pdm;// process virtual memory mapping
+  struct disk_mapping *dm;
+  int page_replacement;
 };
 
 // Process memory is laid out contiguously, low addresses first:

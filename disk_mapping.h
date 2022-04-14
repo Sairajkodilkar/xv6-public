@@ -35,7 +35,7 @@ struct disk_mapping {
 	struct disk_mapping *prev, *next;
 };
 
-void map_to_disk(struct disk_mapping *dm, uint vaddr, int offset, 
+void map_to_disk(struct disk_mapping *dm, uint vaddr, int offset,
 		uint flags, uint inum);
 
 static inline uint
@@ -43,7 +43,7 @@ get_dm_size(const struct disk_mapping *dm) {
 	return dm->map.fm.size;
 }
 
-static inline uint 
+static inline uint
 get_dm_offset(const struct disk_mapping *dm) {
 	return dm->map.fm.offset;
 }
@@ -53,7 +53,7 @@ get_dm_inum(const struct disk_mapping *dm) {
 	return dm->map.fm.inum;
 }
 
-static inline uint 
+static inline uint
 get_dm_block_num(const struct disk_mapping *dm) {
 	return dm->map.sm.block_num;
 }
@@ -63,38 +63,38 @@ get_dm_flags(const struct disk_mapping *dm) {
 	return dm->flags;
 }
 
-static inline uint 
+static inline uint
 get_dm_vaddr(const struct disk_mapping *dm) {
 	return dm->vaddr;
 }
 
 /* Setters */
-static inline void 
+static inline void
 set_dm_size(struct disk_mapping *dm, uint size) {
 	dm->map.fm.size = size;
 }
 
-static inline void 
+static inline void
 set_dm_offset(struct disk_mapping *dm, int offset) {
 	dm->map.fm.offset = offset;
 }
 
-static inline void 
+static inline void
 set_dm_inum(struct disk_mapping *dm, uint inum) {
 	dm->map.fm.inum = inum;
 }
 
-static inline void 
+static inline void
 set_dm_flags(struct disk_mapping *dm, uint flags) {
 	dm->flags = flags;
 }
 
-static inline void 
+static inline void
 set_dm_vaddr(struct disk_mapping *dm, uint vaddr) {
 	dm->vaddr = vaddr;
 }
 
-static inline void 
+static inline void
 set_dm_block_no(struct disk_mapping *dm, uint block_no) {
 	dm->map.sm.block_num = block_no;
 }

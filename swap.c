@@ -16,7 +16,7 @@ static struct swap_header sw;
 
 static struct {
 	uchar swap_bit_map[SWAP_BLOCK_SIZE];
-	struct spinlock lock; 
+	struct spinlock lock;
 } swap;
 
 /* There is no need to store the bitmap on disk */
@@ -42,7 +42,7 @@ uint alloc_swap(void) {
 			continue;
 		while(j < UCHAR_BITS) {
 			blockno = (i * UCHAR_BITS) + j;
-			if(blockno >= sw.size){ 
+			if(blockno >= sw.size){
 				return 0;
 			}
 			if((swap.swap_bit_map[i] & (1<<j)) == 0) {

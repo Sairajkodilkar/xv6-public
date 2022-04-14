@@ -124,13 +124,12 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
-void			proc_map_to_disk(struct proc_disk_mapping *, uint, uint, int, uint, uint);
+void						proc_map_to_disk(struct proc_disk_mapping *, uint, uint, int, uint, uint);
 struct disk_mapping *find_disk_mapping(struct proc_disk_mapping *, uint vaddr);
-void			free_proc_disk_mapping(struct proc_disk_mapping *, uint , uint );
-void			clear_proc_disk_mapping(struct proc_disk_mapping *);
-void			init_proc_disk_mapping(struct proc_disk_mapping *);
-void			copy_pdm(struct proc_disk_mapping *, 
-								struct proc_disk_mapping *);
+void						free_proc_disk_mapping(struct proc_disk_mapping *, uint , uint );
+void						clear_proc_disk_mapping(struct proc_disk_mapping *);
+void						init_proc_disk_mapping(struct proc_disk_mapping *);
+void						copy_pdm(struct proc_disk_mapping *, struct proc_disk_mapping *);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
