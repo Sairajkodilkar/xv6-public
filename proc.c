@@ -106,6 +106,8 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
 
+	initlock(&p->pdm_lock, "pdm");
+
   release(&ptable.lock);
 
   // Allocate kernel stack.
