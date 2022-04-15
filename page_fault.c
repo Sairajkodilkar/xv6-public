@@ -13,8 +13,11 @@
 static int load_fs_page(char *vaddr, const struct disk_mapping *dm) {
 	struct inode *ip;
 
-	if(get_dm_offset(dm) == INVALID_OFFSET)
+	if(get_dm_offset(dm) == INVALID_OFFSET) {
+		cprintf("invalid offset\n");
 		return 0;
+	}
+		cprintf("not invalid offset\n");
 
 	begin_op();
 	ip = iget(FILE_SYSTEM_DEV, get_dm_inum(dm));
@@ -55,7 +58,6 @@ void page_fault_intr() {
 	pte_t *pte;
 	struct proc *curproc;
 	struct disk_mapping *dm;
-	static int i;
 
 	pgflt_vaddr = rcr2();
 	curproc = myproc();
@@ -64,9 +66,8 @@ void page_fault_intr() {
 
 	if(curproc->pages_in_memory > MAX_PAGES) {
 		do {
-			dm = &(curproc->pdm.proc_mapping[(i + 1) % VPP]);
-			cprintf("here\n");
-		} while(!IS_IN_MEM(dm) && dm->vaddr < curproc->sz);
+			dm = &(curproc->pdm.proc_mapping[curproc->next_page++]);
+		} while(!IS_IN_MEM(dm));
 		swap_blockno = swap_out_page(curproc->pgdir, (char *)(dm->vaddr));
 		set_dm_block_no(dm, swap_blockno);
 		set_dm_flags(dm, MAPPED | SWAP_MAP);
@@ -80,6 +81,7 @@ void page_fault_intr() {
 	if(dm == 0) {
 		cprintf("page fault intr: killed %s\n", curproc->name);
 		curproc->killed = 1;
+		panic("page fault\n");
 		return;
 	}
 
@@ -89,10 +91,12 @@ void page_fault_intr() {
 	curproc->pages_in_memory++;
 
 	if(IS_SWAP_MAP(dm)) {
+		cprintf("swap page in\n");
 		read_swap_block(mem, get_dm_block_num(dm));
 		dealloc_swap(get_dm_block_num(dm));
 	}
 	else {
+		cprintf("loading FS page\n");
 		load_fs_page(mem, dm);
 	}
 

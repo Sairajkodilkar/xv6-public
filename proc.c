@@ -219,7 +219,7 @@ fork(void)
 
 	copy_pdm(&(np->pdm), &(curproc->pdm));
 	np->pages_in_memory = curproc->pages_in_memory;
-	np->page_replacement = curproc->page_replacement;
+	np->next_page = curproc->next_page;
 
 	// Copy process state from proc.
 	if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
@@ -331,6 +331,7 @@ wait(void)
 				p->killed = 0;
 				p->state = UNUSED;
 				release(&ptable.lock);
+				cprintf("WAIT COMPLETED\n");
 				return pid;
 			}
 		}
@@ -587,7 +588,6 @@ void proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz,
 		if(IS_FREE(dm)) {
 			map_to_disk(dm, a, offset, flags | MAPPED, inum);
 			a += PGSIZE;
-			/* TODO: handel this in case of swap*/
 			offset += PGSIZE;
 			pdm->size++;
 		}

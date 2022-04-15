@@ -196,7 +196,8 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 // Load a program segment into pgdir.  addr must be page-aligned
 // and the pages from addr to addr+sz must already be mapped.
 int
-loaduvm(struct proc_disk_mapping *pdm, pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
+loaduvm(struct proc_disk_mapping *pdm, pde_t *pgdir, char *addr, 
+		struct inode *ip, uint offset, uint sz)
 {
 	uint i, n;
 	pte_t *pte;
@@ -214,6 +215,7 @@ loaduvm(struct proc_disk_mapping *pdm, pde_t *pgdir, char *addr, struct inode *i
 		if((dm = find_disk_mapping(pdm, (uint)(addr + i))) == 0) {
 			panic("Mapping not found\n");
 		}
+		cprintf("dm->vaddr for load %x\n", dm->vaddr);
 		set_dm_offset(dm, offset + i);
 		set_dm_size(dm, n);
 	}
@@ -235,6 +237,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz, uint flags)
 
 	a = PGROUNDUP(oldsz);
 	for(; a < newsz; a += PGSIZE){
+		cprintf("allocating %x\n", a);
 		mem = 0;
 		if(flags & PTE_P) {
 			mem = kalloc();

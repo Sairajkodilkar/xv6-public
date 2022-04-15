@@ -80,8 +80,8 @@ trap(struct trapframe *tf)
     break;
 
   case T_PGFLT:
-	page_fault_intr();
-	break;
+		page_fault_intr();
+		break;
 
   //PAGEBREAK: 13
   default:

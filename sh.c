@@ -167,6 +167,7 @@ main(void)
     if(fork1() == 0)
       runcmd(parsecmd(buf));
     wait();
+		printf(1, "wait completed\n");
   }
   exit();
 }
@@ -491,3 +492,4 @@ nulterminate(struct cmd *cmd)
   }
   return cmd;
 }
+char mem_for_pg[10];
