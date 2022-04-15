@@ -580,15 +580,15 @@ void proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz,
 	uint i;
 	uint a = PGROUNDUP(oldsz);
 
-	for(i = 0; a < newsz; i++) {
+	for(i = 0; a < PGROUNDUP(newsz); i++) {
 		if(pdm->size == VPP) {
 			panic("Too many addresses\n");
 		}
 		dm = &(pdm->proc_mapping[i]);
 		if(IS_FREE(dm)) {
+			cprintf("mapping for proc %x\n", a);
 			map_to_disk(dm, a, offset, flags | MAPPED, inum);
 			a += PGSIZE;
-			offset += PGSIZE;
 			pdm->size++;
 		}
 	}

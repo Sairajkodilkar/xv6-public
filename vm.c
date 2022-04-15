@@ -206,6 +206,7 @@ loaduvm(struct proc_disk_mapping *pdm, pde_t *pgdir, char *addr,
 	if((uint) addr % PGSIZE != 0)
 		panic("loaduvm: addr must be page aligned");
 	for(i = 0; i < sz; i += PGSIZE){
+		cprintf("address loading %x\n", i);
 		if((pte = walkpgdir(pgdir, addr+i, 0)) == 0)
 			panic("loaduvm: address should exist");
 		if(sz - i < PGSIZE)
@@ -215,7 +216,6 @@ loaduvm(struct proc_disk_mapping *pdm, pde_t *pgdir, char *addr,
 		if((dm = find_disk_mapping(pdm, (uint)(addr + i))) == 0) {
 			panic("Mapping not found\n");
 		}
-		cprintf("dm->vaddr for load %x\n", dm->vaddr);
 		set_dm_offset(dm, offset + i);
 		set_dm_size(dm, n);
 	}
@@ -237,7 +237,6 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz, uint flags)
 
 	a = PGROUNDUP(oldsz);
 	for(; a < newsz; a += PGSIZE){
-		cprintf("allocating %x\n", a);
 		mem = 0;
 		if(flags & PTE_P) {
 			mem = kalloc();
@@ -372,7 +371,6 @@ copyuvm(pde_t *pgdir, uint sz)
 		pa = PTE_ADDR(*pte);
 		flags = PTE_FLAGS(*pte);
 		if(flags & PTE_P) {
-			cprintf("copying %x\n", i);
 			if((mem = kalloc()) == 0)
 				goto bad;
 			memmove(mem, (char*)P2V(pa), PGSIZE);
