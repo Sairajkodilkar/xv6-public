@@ -58,8 +58,8 @@ void page_fault_intr() {
 
 	pgflt_vaddr = rcr2();
 	curproc = myproc();
-	cprintf("PGFLT address %x, prog %d, prog name %s\n", PGROUNDDOWN(pgflt_vaddr), 
-			curproc->pid, curproc->name);
+	cprintf("PGFLT address %x, prog %d, prog name %s\n", 
+      PGROUNDDOWN(pgflt_vaddr), curproc->pid, curproc->name);
 
 	acquire(&curproc->pdm_lock);
 

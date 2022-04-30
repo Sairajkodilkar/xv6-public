@@ -15,9 +15,9 @@ int main(int argc, char **argv) {
 	struct swap_header sh;
 	int fd,
 			block_size,
-			count;
-	
-	if(argc != 4) {
+			count;	
+
+  if(argc != 4) {
 		usage();
 		return 0;
 	}

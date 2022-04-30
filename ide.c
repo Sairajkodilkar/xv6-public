@@ -85,15 +85,15 @@ idestart(struct buf *b)
   if(b == 0)
     panic("idestart");
   if(b->blockno >= FSSIZE) {
-	  cprintf("%d\n", b->blockno);
+    cprintf("%d\n", b->blockno);
     panic("incorrect blockno");
   }
 
   int portno;
   if(b->dev <= 1)
-	  portno = 0x1f0;
+    portno = 0x1f0;
   else
-	  portno = 0x170;
+    portno = 0x170;
 
   int sector_per_block =  BSIZE/SECTOR_SIZE;
   int sector = b->blockno * sector_per_block;
@@ -104,9 +104,9 @@ idestart(struct buf *b)
 
   idewait(0, portno);
   if(b->dev <= 1)
-	  outb(0x3f6, 0);  // generate interrupt
+    outb(0x3f6, 0);  // generate interrupt
   else
-	  outb(0x376, 0);
+    outb(0x376, 0);
 
   outb(portno + 2, sector_per_block);  // number of sectors
   outb(portno + 3, sector & 0xff);
@@ -114,47 +114,47 @@ idestart(struct buf *b)
   outb(portno + 5, (sector >> 16) & 0xff);
   outb(portno + 6, 0xe0 | ((b->dev&1)<<4) | ((sector>>24)&0x0f));
   if(b->flags & B_DIRTY){
-	  outb(portno + 7, write_cmd);
-	  outsl(portno, b->data, BSIZE/4);
+    outb(portno + 7, write_cmd);
+    outsl(portno, b->data, BSIZE/4);
   } else {
-	  outb(portno + 7, read_cmd);
+    outb(portno + 7, read_cmd);
   }
 }
 
 // Interrupt handler.
-	void
+void
 ideintr(int flag)
 {
-	struct buf *b;
-	int portno;
+  struct buf *b;
+  int portno;
 
-	// First queued buffer is the active request.
-	acquire(&idelock);
-	if(flag == 0)
-		portno = 0x1f0;
-	else
-		portno = 0x170;
+  // First queued buffer is the active request.
+  acquire(&idelock);
+  if(flag == 0)
+    portno = 0x1f0;
+  else
+    portno = 0x170;
 
-	if((b = idequeue) == 0){
-		release(&idelock);
-		return;
-	}
-	idequeue = b->qnext;
+  if((b = idequeue) == 0){
+    release(&idelock);
+    return;
+  }
+  idequeue = b->qnext;
 
-	// Read data if needed.
-	if(!(b->flags & B_DIRTY) && idewait(1, portno) >= 0)
-		insl(portno, b->data, BSIZE/4);
+  // Read data if needed.
+  if(!(b->flags & B_DIRTY) && idewait(1, portno) >= 0)
+    insl(portno, b->data, BSIZE/4);
 
-	// Wake process waiting for this buf.
-	b->flags |= B_VALID;
-	b->flags &= ~B_DIRTY;
-	wakeup(b);
+  // Wake process waiting for this buf.
+  b->flags |= B_VALID;
+  b->flags &= ~B_DIRTY;
+  wakeup(b);
 
-	// Start disk on next buf in queue.
-	if(idequeue != 0)
-		idestart(idequeue);
+  // Start disk on next buf in queue.
+  if(idequeue != 0)
+    idestart(idequeue);
 
-	release(&idelock);
+  release(&idelock);
 }
 
 //PAGEBREAK!
@@ -165,37 +165,37 @@ ideintr(int flag)
  * and maintain the link list nodes internal to the ide, this will minimize the
  * dependancy on the buffer.
  */
-	void
+void
 iderw(struct buf *b)
 {
-	struct buf **pp;
+  struct buf **pp;
 
-	if(!holdingsleep(&b->lock))
-		panic("iderw: buf not locked");
-	if((b->flags & (B_VALID|B_DIRTY)) == B_VALID)
-		panic("iderw: nothing to do");
-	if(b->dev == 1 && !havedisk1)
-		panic("iderw: ide disk 1 not present");
-	if(b->dev >= 2 && !havedisk2) {
-		panic("iderw: ide disk 2 not present");
-	}
+  if(!holdingsleep(&b->lock))
+    panic("iderw: buf not locked");
+  if((b->flags & (B_VALID|B_DIRTY)) == B_VALID)
+    panic("iderw: nothing to do");
+  if(b->dev == 1 && !havedisk1)
+    panic("iderw: ide disk 1 not present");
+  if(b->dev >= 2 && !havedisk2) {
+    panic("iderw: ide disk 2 not present");
+  }
 
-	acquire(&idelock);  //DOC:acquire-lock
+  acquire(&idelock);  //DOC:acquire-lock
 
-	// Append b to idequeue.
-	b->qnext = 0;
-	for(pp=&idequeue; *pp; pp=&(*pp)->qnext)  //DOC:insert-queue
-		;
-	*pp = b;
+  // Append b to idequeue.
+  b->qnext = 0;
+  for(pp=&idequeue; *pp; pp=&(*pp)->qnext)  //DOC:insert-queue
+    ;
+  *pp = b;
 
-	// Start disk if necessary.
-	if(idequeue == b)
-		idestart(b);
+  // Start disk if necessary.
+  if(idequeue == b)
+    idestart(b);
 
-	// Wait for request to finish.
-	while((b->flags & (B_VALID|B_DIRTY)) != B_VALID){
-		sleep(b, &idelock);
-	}
+  // Wait for request to finish.
+  while((b->flags & (B_VALID|B_DIRTY)) != B_VALID){
+    sleep(b, &idelock);
+  }
 
-	release(&idelock);
+  release(&idelock);
 }
