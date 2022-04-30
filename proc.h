@@ -17,7 +17,7 @@ extern int ncpu;
 #include "disk_mapping.h"
 
 /* Virtual address per process */
-#define VPP (20)
+#define VPP (50)
 /* Max memory pages per process */
 #define MAX_PAGES (10)
 
