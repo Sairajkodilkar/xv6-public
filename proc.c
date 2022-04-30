@@ -333,7 +333,6 @@ wait(void)
 				p->killed = 0;
 				p->state = UNUSED;
 				release(&ptable.lock);
-				cprintf("WAIT COMPLETED\n");
 				return pid;
 			}
 		}
@@ -588,7 +587,6 @@ void proc_map_to_disk(struct proc_disk_mapping *pdm, uint oldsz,
 		}
 		dm = &(pdm->proc_mapping[i]);
 		if(IS_FREE(dm)) {
-			cprintf("mapping for proc %x\n", a);
 			map_to_disk(dm, a, offset, flags | MAPPED, inum);
 			a += PGSIZE;
 			pdm->size++;

@@ -167,7 +167,6 @@ main(void)
     if(fork1() == 0)
       runcmd(parsecmd(buf));
     wait();
-		printf(1, "wait completed\n");
   }
   exit();
 }

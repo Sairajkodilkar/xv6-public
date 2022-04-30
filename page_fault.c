@@ -13,13 +13,9 @@
 static int load_fs_page(char *vaddr, const struct disk_mapping *dm) {
 	struct inode *ip;
 
-	cprintf("Actual loading %x\n", dm->vaddr);
 	if(get_dm_offset(dm) == INVALID_OFFSET) {
-		cprintf("invalid offset\n");
 		return 0;
 	}
-		cprintf("not invalid offset\n");
-
 	begin_op();
 	ip = iget(FILE_SYSTEM_DEV, get_dm_inum(dm));
 	ilock(ip);
@@ -71,6 +67,7 @@ void page_fault_intr() {
 		do {
 			dm = &(curproc->pdm.proc_mapping[curproc->next_page++]);
 		} while(!IS_IN_MEM(dm));
+		cprintf("Swapping out %x\n", dm->vaddr);
 
 		release(&curproc->pdm_lock);
 		swap_blockno = swap_out_page(curproc->pgdir, (char *)(dm->vaddr));
