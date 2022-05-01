@@ -65,16 +65,10 @@ exec(char *path, char **argv)
     if(ph.vaddr + ph.memsz < ph.vaddr)
       goto bad;
 
-    if(ph.filesz < ph.memsz) {
-      cprintf("greater size %x %x\n", ph.filesz, ph.memsz);
-    }
-
     flags &= ~PTE_P;
 
-    cprintf("file\n");
     proc_map_to_disk(&new_pdm, sz, ph.vaddr + ph.filesz, INVALID_OFFSET, FILE_MAP, inum);
 
-    cprintf("mem\n");
     proc_map_to_disk(&new_pdm, sz + ph.filesz, ph.vaddr + ph.memsz, INVALID_OFFSET, FILE_MAP, inum);
 
     if((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz, flags)) == 0)
